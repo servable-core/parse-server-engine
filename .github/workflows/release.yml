@@ -1,0 +1,93 @@
+# https://github.com/parse-community/parse-server/blob/alpha/.github/workflows/ci.yml
+
+name: Release
+
+on:
+  push:
+    branches: [ main, next, next-major, beta, alpha, 'release-[0-9]+.x.x', release ]
+  pull_request:
+    branches: '*'
+    paths-ignore:
+      - '**/**.md'
+
+jobs:
+  check-code-analysis:
+    name: Code Analysis 👀
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ 'javascript' ]
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v2
+      with:
+        languages: ${{ matrix.language }}
+        source-root: src
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v2
+
+  check-lock-file-version:
+    name: Check Yarn Lock File Version 🔒
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    needs: [check-code-analysis]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Check JS Lockfile
+        uses: ChromaticHQ/javascript-lockfile-check-action@v1.1.0
+        with:
+          package-manager: yarn
+          # working-directory: web/themes/custom/my-custom-theme
+
+  quality:
+    name: Quality 🐳
+    runs-on: ${{ matrix.os }}
+    needs: [check-code-analysis,check-lock-file-version]
+    strategy:
+      matrix:
+        # node-version: [10.x, 12.x, 14.x, 15.x]
+        node-version: [16.x]
+        # os: [ubuntu-latest, windows-latest]
+        os: [ubuntu-latest]
+        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+    - uses: mskelton/setup-yarn@v1
+    - name: Install dependencies
+      run: yarn --frozen-lockfile
+    # - run: yarn test
+
+  publish:
+    name: Publish 🚀
+    runs-on: ubuntu-latest
+    # if: ${{ github.ref == 'refs/heads/main' }}
+    needs: [quality,check-code-analysis,check-lock-file-version]
+    permissions:
+      contents: write # to be able to publish a GitHub release
+      issues: write # to be able to comment on released issues
+      pull-requests: write # to be able to comment on released pull requests
+      id-token: write # to enable use of OIDC for npm provenance
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+    - name: Setup yarn
+      uses: mskelton/setup-yarn@v1
+    - name: Install dependencies
+      run: yarn --frozen-lockfile
+    - name: Verify the integrity of provenance attestations and registry signatures for installed dependencies
+      run: npm audit signatures
+    - name: Release
+      run: yarn semantic-release
+      env:
+        NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

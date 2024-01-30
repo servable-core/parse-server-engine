@@ -1,0 +1,118 @@
+{
+  "name": "@servable/parse-server-engine",
+  "type": "module",
+  "source": "src/index.js",
+  "main": "src/index.js",
+  "version": "0.0.0-development",
+  "description": "Servable Parse Server Engine",
+  "author": "Servable Community",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/servable-core/parse-server-engine/issues"
+  },
+  "homepage": "https://github.com/servable-core/parse-server-engine#readme",
+  "files": [
+    "dist",
+    "src"
+  ],
+  "engines": {
+    "node": ">=10"
+  },
+  "config": {
+    "commitizen": {
+      "path": "./node_modules/cz-conventional-changelog"
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "test_": "echo \"Error: no test specified\" && exit 1",
+    "semantic-release": "semantic-release",
+    "acp": "git add . && npm run commit && git push",
+    "commit": "git-cz",
+    "size": "size-limit",
+    "analyze": "size-limit --why",
+    "start": "microbundle-crl watch --no-compress --format modern,cjs",
+    "prepare_": "run-s build",
+    "test": "run-s test:unit test:lint test:build",
+    "test:build": "run-s build",
+    "test:lint": "eslint .",
+    "test:unit_": "cross-env CI=1 react-scripts test --env=jsdom",
+    "test:unit": "yarn node --require=dotenv/config --experimental-vm-modules --experimental-specifier-resolution=node $(yarn bin jest) --config ./jest.config.json",
+    "test:watch": "react-scripts test --env=jsdom"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/servable-core/parse-server-engine.git"
+  },
+  "keywords": [
+    "parse",
+    "server",
+    "servable"
+  ],
+  "prettier": {
+    "printWidth": 80,
+    "semi": true,
+    "singleQuote": true,
+    "trailingComma": "es5"
+  },
+  "size-limit": [
+    {
+      "path": "dist/index.js",
+      "limit": "600 KB"
+    },
+    {
+      "path": "dist/index.modern.js",
+      "limit": "600 KB"
+    },
+    {
+      "path": "dist/index.umd.js",
+      "limit": "600 KB"
+    }
+  ],
+  "dependencies": {
+    "@hokify/agenda": "^6.3.0",
+    "agenda": "*",
+    "axios": "^1.6.2",
+    "bluebird": "^3.7.2",
+    "body-parser": "^1.20.2",
+    "compression": "^1.7.4",
+    "cors": "^2.8.5",
+    "express": "^4.18.1",
+    "express-rate-limit": "^7.1.5",
+    "fs-extra": "^11.2.0",
+    "human-interval": "^2.0.1",
+    "memory-cache": "^0.2.0",
+    "moment": "*",
+    "parse": "^3.5.1",
+    "parse-server": "^5.4.0",
+    "parse-server-s3like-adapter": "^2.0.1",
+    "parse-server-sendgrid-adapter": "^1.0.0",
+    "query-string-parse": "^1.1.1",
+    "sharp": "0.30.7",
+    "underscore": "^1.13.3",
+    "winston": "^3.7.2"
+  },
+  "devDependencies": {
+    "@size-limit/preset-small-lib": "^4.10.2",
+    "cz-conventional-changelog": "^3.3.0",
+    "eslint": "^6.8.0",
+    "eslint-config-prettier": "^6.7.0",
+    "eslint-config-standard": "^14.1.0",
+    "eslint-config-standard-react": "^9.2.0",
+    "eslint-plugin-import": "^2.18.2",
+    "eslint-plugin-node": "^11.0.0",
+    "eslint-plugin-prettier": "^3.1.1",
+    "eslint-plugin-promise": "^4.2.1",
+    "eslint-plugin-react": "^7.17.0",
+    "eslint-plugin-standard": "^4.0.1",
+    "husky": "^6.0.0",
+    "javascript-obfuscator": "^4.0.0",
+    "jest": "^29.7.0",
+    "npm-run-all": "^4.1.5",
+    "prettier": "^2.0.4",
+    "semantic-release": "^23.0.0",
+    "size-limit": "^4.10.2"
+  }
+}

@@ -1,0 +1,662 @@
+{
+  "type": "frameworkbridge",
+  "version": "1.0.0",
+  "id": "@servable/parse-server-engine",
+  "name": "Parse Server Bridge",
+  "description": "Parse Server Bridge with Agenda for jobs. Comes with a complete system management for Parse dashboad, cache and livequery.",
+  "homepage": "",
+  "icon": "",
+  "author": {
+    "name": "Servable Community",
+    "email": "servablecommunity@gmail.com",
+    "url": "",
+    "github": ""
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/servable-core/parse-server-engine.git"
+  },
+  "keywords": [],
+  "license": "MIT",
+  "forks": {},
+  "apis": [
+    {
+      "id": "Object",
+      "version": "*"
+    },
+    {
+      "id": "Cloud",
+      "version": "*"
+    },
+    {
+      "id": "User",
+      "version": "*"
+    },
+    {
+      "id": "ACL",
+      "version": "*"
+    },
+    {
+      "id": "Role",
+      "version": "*"
+    },
+    {
+      "id": "Session",
+      "version": "*"
+    },
+    {
+      "id": "Installation",
+      "version": "*"
+    },
+    {
+      "id": "Config",
+      "version": "*"
+    },
+    {
+      "id": "LiveQuery",
+      "version": "*"
+    }
+  ],
+  "usage": {
+    "howto": "",
+    "template": {
+      "id": "@servable/parse-server-engine",
+      "slug": "parse-server",
+      "params": {
+        "appMasterKey": "<%= appMasterKey %>",
+        "appId": "<%= appId %>",
+        "appJavascriptKey": "<%= appJavascriptKey %>",
+        "appName": "<%= appName %>",
+        "appDescription": "<%= appDescription %>",
+        "appEndpoint": "<%= appEndpoint %>",
+        "appDistributionType": "<%= appDistributionType %>",
+        "appUseCache": "<%= appUseCache %>",
+        "appUseDashboard": "<%= appUseDashboard %>",
+        "appDashboardMainPassword": "<%= appDashboardMainPassword %>",
+        "appDashboardPort": "<%= appDashboardPort %>",
+        "appCachePort": "<%= appCachePort %>",
+        "appConfigurations": "<%= appConfigurations %>",
+        "appDatabasePort": "<%= appDatabasePort %>",
+        "appPort": "<%= appPort %>",
+        "appDatabaseType": "<%= appDatabaseType %>",
+        "appUtilsDatabasePort": "<%= appUtilsDatabasePort %>",
+        "appLiveQueryCachePort": "<%= appLiveQueryCachePort %>",
+        "appUseLocalS3": "<%= appUseLocalS3 %>",
+        "appMinioUser": "<%= appMinioUser %>",
+        "appMinioPassword": "<%= appMinioPassword %>",
+        "appMinioEndpoint": "<%= appMinioEndpoint %>",
+        "appMinioBucket": "<%= appMinioBucket %>",
+        "appS3ApiPort": "<%= appS3ApiPort %>",
+        "appS3UIPort": "<%= appS3UIPort %>",
+        "env": "process.env.NODE_ENV",
+        "schema": {
+          "exclude": false
+        }
+      }
+    },
+    "parameters": [
+      {
+        "type": "string",
+        "name": "appId",
+        "message": "App id",
+        "validators": [
+          {
+            "type": "nonempty"
+          }
+        ],
+        "sideEffects": [
+          {
+            "type": "payload",
+            "name": "authorName",
+            "template": ""
+          },
+          {
+            "type": "payload",
+            "name": "authorEmail",
+            "template": ""
+          },
+          {
+            "type": "payload",
+            "name": "authorUrl",
+            "template": ""
+          },
+          {
+            "type": "payload",
+            "name": "restApiKey",
+            "template": "REST_API_KEY_TO_CHANGE"
+          },
+          {
+            "type": "payload",
+            "name": "appJavascriptKey",
+            "template": "JAVASCRIPT_KEY_TO_CHANGE"
+          }
+        ]
+      },
+      {
+        "type": "string",
+        "name": "appMasterKey",
+        "message": "Master Key",
+        "validators": [
+          {
+            "id": "nonempty"
+          }
+        ]
+      },
+      {
+        "name": "appPort",
+        "type": "number",
+        "promptType": "input",
+        "defaultValue": 1387,
+        "message": "App port",
+        "validators": [
+          {
+            "id": "nonempty"
+          },
+          {
+            "id": "isnumber"
+          }
+        ],
+        "transformers": {
+          "in": [
+            {
+              "id": "getPort"
+            }
+          ]
+        }
+      },
+      {
+        "type": "string",
+        "name": "appEndpoint",
+        "defaultValue": "servable",
+        "message": "App endpoint",
+        "validators": [
+          {
+            "id": "nonempty"
+          }
+        ]
+      },
+      {
+        "type": "string",
+        "name": "appId",
+        "message": "REST Api Key",
+        "defaultValue": "REST_API_KEY_TO_CHANGE",
+        "validators": [
+          {
+            "type": "nonempty"
+          }
+        ]
+      },
+      {
+        "type": "string",
+        "prompt": {
+          "type": "list"
+        },
+        "name": "appDatabaseType",
+        "choices": [
+          {
+            "name": "Mongo DB (required for standalone distribution)",
+            "value": "mongodb"
+          },
+          {
+            "name": "PostGresQL",
+            "value": "postGresQL",
+            "checked": true
+          }
+        ],
+        "message": "Database type",
+        "defaultValue": "mongodb",
+        "validators": [
+          {
+            "type": "nonempty"
+          }
+        ]
+      },
+      {
+        "name": "appDatabasePort",
+        "type": "number",
+        "message": "App database port?",
+        "promptType": "input",
+        "defaultValue": 27017,
+        "validators": [
+          {
+            "id": "nonempty"
+          },
+          {
+            "id": "isnumber"
+          }
+        ],
+        "transformers": {
+          "in": [
+            {
+              "id": "getPort"
+            }
+          ]
+        },
+        "sideEffects": [
+          {
+            "position": "after",
+            "type": "payload",
+            "name": "databaseURI",
+            "template": "mongodb://root:DATABASE_PASSWORD_TO_CHANGE@localhost:<%= appDatabasePort %>/app?authSource=admin&readPreference=primary&ssl=false",
+            "conditions": [
+              {
+                "name": "appDatabaseType",
+                "operator": "=",
+                "operand": "mongodb"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "prompt": {
+          "type": "confirm"
+        },
+        "name": "appUseCache",
+        "message": "Use app cache",
+        "defaultValue": true,
+        "type": "boolean",
+        "validators": [
+          {
+            "type": "nonempty"
+          }
+        ]
+      },
+      {
+        "name": "appCachePort",
+        "type": "number",
+        "message": "App cache port",
+        "promptType": "input",
+        "defaultValue": 6379,
+        "validators": [
+          {
+            "id": "nonempty"
+          },
+          {
+            "id": "isnumber"
+          }
+        ],
+        "conditions": [
+          {
+            "name": "appUseCache"
+          }
+        ],
+        "transformers": {
+          "in": [
+            {
+              "id": "getPort"
+            }
+          ]
+        }
+      },
+      {
+        "prompt": {
+          "type": "confirm"
+        },
+        "name": "useLiveQueryServer",
+        "message": "Use Live Query server",
+        "defaultValue": true,
+        "type": "boolean",
+        "validators": [
+          {
+            "type": "nonempty"
+          }
+        ]
+      },
+      {
+        "name": "appLiveQueryServerPort",
+        "type": "number",
+        "message": "Livequery port",
+        "promptType": "input",
+        "defaultValue": 1392,
+        "validators": [
+          {
+            "id": "nonempty"
+          },
+          {
+            "id": "isnumber"
+          }
+        ],
+        "conditions": [
+          {
+            "name": "useLiveQueryServer"
+          }
+        ],
+        "transformers": {
+          "in": [
+            {
+              "id": "getPort"
+            }
+          ]
+        }
+      },
+      {
+        "name": "appLiveQueryCachePort",
+        "type": "number",
+        "message": "Livequery cache port",
+        "promptType": "input",
+        "defaultValue": 6380,
+        "validators": [
+          {
+            "id": "nonempty"
+          },
+          {
+            "id": "isnumber"
+          }
+        ],
+        "conditions": [
+          {
+            "name": "useLiveQueryServer"
+          }
+        ],
+        "transformers": {
+          "in": [
+            {
+              "id": "getPort"
+            }
+          ]
+        }
+      },
+      {
+        "name": "appUseLocalS3",
+        "message": "Use a local bucket storage (recommended)",
+        "defaultValue": true,
+        "prompt": {
+          "type": "confirm"
+        },
+        "type": "boolean",
+        "validators": [
+          {
+            "type": "nonempty"
+          }
+        ]
+      },
+      {
+        "type": "string",
+        "name": "appMinioUser",
+        "message": "Minio username",
+        "defaultValue": "MINIO_USERNAME_TO_CHANGE",
+        "validators": [
+          {
+            "type": "nonempty"
+          }
+        ],
+        "conditions": [
+          {
+            "name": "appUseLocalS3"
+          }
+        ]
+      },
+      {
+        "type": "string",
+        "name": "appMinioPassword",
+        "message": "Minio password",
+        "defaultValue": "MINIO_PASSWORD_TO_CHANGE",
+        "validators": [
+          {
+            "type": "nonempty"
+          }
+        ],
+        "conditions": [
+          {
+            "name": "appUseLocalS3"
+          }
+        ]
+      },
+      {
+        "type": "string",
+        "name": "appMinioEndpoint",
+        "message": "Minio endpoint",
+        "defaultValue": "http://localhost:9000",
+        "validators": [
+          {
+            "type": "nonempty"
+          }
+        ],
+        "conditions": [
+          {
+            "name": "appUseLocalS3"
+          }
+        ]
+      },
+      {
+        "type": "string",
+        "name": "appMinioBucket",
+        "message": "Minio bucket",
+        "defaultValue": "primary",
+        "validators": [
+          {
+            "type": "nonempty"
+          }
+        ],
+        "conditions": [
+          {
+            "name": "appUseLocalS3"
+          }
+        ]
+      },
+      {
+        "name": "appS3ApiPort",
+        "type": "number",
+        "message": "S3 API port",
+        "promptType": "input",
+        "defaultValue": 9000,
+        "validators": [
+          {
+            "id": "nonempty"
+          },
+          {
+            "id": "isnumber"
+          }
+        ],
+        "conditions": [
+          {
+            "name": "appUseLocalS3"
+          }
+        ],
+        "transformers": {
+          "in": [
+            {
+              "id": "getPort"
+            }
+          ]
+        }
+      },
+      {
+        "name": "appS3UIPort",
+        "type": "number",
+        "message": "S3 UI port",
+        "promptType": "input",
+        "defaultValue": 9001,
+        "validators": [
+          {
+            "id": "nonempty"
+          },
+          {
+            "id": "isnumber"
+          }
+        ],
+        "conditions": [
+          {
+            "name": "appUseLocalS3"
+          }
+        ],
+        "transformers": {
+          "in": [
+            {
+              "id": "getPort"
+            }
+          ]
+        }
+      },
+      {
+        "name": "appUseDashboard",
+        "message": "Use a Servable Dashboard (recommended)",
+        "defaultValue": true,
+        "prompt": {
+          "type": "confirm"
+        },
+        "type": "boolean",
+        "validators": [
+          {
+            "type": "nonempty"
+          }
+        ]
+      },
+      {
+        "type": "string",
+        "name": "appDashboardMainUsername",
+        "message": "Dashboard username",
+        "defaultValue": "admin",
+        "validators": [
+          {
+            "type": "nonempty"
+          }
+        ],
+        "conditions": [
+          {
+            "name": "appUseDashboard"
+          }
+        ]
+      },
+      {
+        "type": "string",
+        "name": "appDashboardMainPassword",
+        "message": "Dashboard password",
+        "defaultValue": "PASSWORD_TO_CHANGE",
+        "validators": [
+          {
+            "type": "nonempty"
+          }
+        ],
+        "conditions": [
+          {
+            "name": "appUseDashboard"
+          }
+        ]
+      },
+      {
+        "name": "appDashboardPort",
+        "type": "number",
+        "message": "Dashboard port",
+        "promptType": "input",
+        "defaultValue": 4040,
+        "validators": [
+          {
+            "id": "nonempty"
+          },
+          {
+            "id": "isnumber"
+          }
+        ],
+        "conditions": [
+          {
+            "name": "appUseDashboard"
+          }
+        ],
+        "transformers": {
+          "in": [
+            {
+              "id": "getPort"
+            }
+          ]
+        }
+      },
+      {
+        "type": "string",
+        "prompt": {
+          "type": "list"
+        },
+        "name": "appDistributionType",
+        "choices": [
+          {
+            "name": "Standalone",
+            "value": "standalone",
+            "checked": true
+          },
+          {
+            "name": "Distributed (requires a separate replicated mongo database deployment)",
+            "value": "distributed"
+          }
+        ],
+        "message": "App distribution type",
+        "defaultValue": "standalone",
+        "validators": [
+          {
+            "type": "nonempty"
+          }
+        ],
+        "sideEffects": [
+          {
+            "position": "after",
+            "type": "payload",
+            "name": "utilsDatabaseURI",
+            "template": "mongodb://root:DATABASE_PASSWORD_TO_CHANGE@localhost:<%= appDatabasePort %>/utils?authSource=admin&readPreference=primary&ssl=false",
+            "conditions": [
+              {
+                "name": "appDistributionType",
+                "operator": "=",
+                "operand": "standalone"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "string",
+        "message": "App configurations",
+        "prompt": {
+          "type": "list"
+        },
+        "name": "appConfigurations",
+        "choices": [
+          {
+            "name": "Production (mandatory)",
+            "value": "production",
+            "checked": true
+          },
+          {
+            "name": "Staging (experimental)",
+            "value": "staging"
+          }
+        ],
+        "defaultValue": "production",
+        "validators": [
+          {
+            "type": "nonempty"
+          }
+        ]
+      },
+      {
+        "name": "appUtilsDatabasePort",
+        "type": "number",
+        "message": "App utils database port",
+        "defaultValue": 27018,
+        "promptType": "input",
+        "validators": [
+          {
+            "id": "nonempty"
+          },
+          {
+            "id": "isnumber"
+          }
+        ],
+        "conditions": [
+          {
+            "name": "appDistributionType",
+            "operator": "=",
+            "operand": "standalone"
+          }
+        ],
+        "transformers": {
+          "in": [
+            {
+              "id": "getPort"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "registry": {}
+}

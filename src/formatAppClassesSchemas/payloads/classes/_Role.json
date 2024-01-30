@@ -1,0 +1,74 @@
+{
+    "className": "_Role",
+    "fields": {
+        "objectId": {
+            "type": "String"
+        },
+        "createdAt": {
+            "type": "Date"
+        },
+        "updatedAt": {
+            "type": "Date"
+        },
+        "ACL": {
+            "type": "ACL"
+        },
+        "name": {
+            "type": "String"
+        },
+        "users": {
+            "type": "Relation",
+            "targetClass": "_User"
+        },
+        "roles": {
+            "type": "Relation",
+            "targetClass": "_Role"
+        },
+        "isTransverse": {
+            "type": "Boolean"
+        },
+        "appliesTo": {
+            "type": "Array"
+        },
+        "customName": {
+            "type": "String"
+        },
+        "customNameLoc": {
+            "type": "Object"
+        }
+    },
+    "classLevelPermissions": {
+        "find": {
+            "*": true
+        },
+        "count": {
+            "*": true
+        },
+        "get": {
+            "*": true
+        },
+        "create": {
+            "*": true
+        },
+        "update": {
+            "*": true
+        },
+        "delete": {
+            "*": true
+        },
+        "addField": {
+            "*": true
+        },
+        "protectedFields": {
+            "*": []
+        }
+    },
+    "indexes": {
+        "_id_": {
+            "_id": 1
+        },
+        "name_1": {
+            "name": 1
+        }
+    }
+}

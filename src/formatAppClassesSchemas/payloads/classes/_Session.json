@@ -1,0 +1,67 @@
+{
+    "className": "_Session",
+    "fields": {
+        "objectId": {
+            "type": "String"
+        },
+        "createdAt": {
+            "type": "Date"
+        },
+        "updatedAt": {
+            "type": "Date"
+        },
+        "ACL": {
+            "type": "ACL"
+        },
+        "user": {
+            "type": "Pointer",
+            "targetClass": "_User"
+        },
+        "installationId": {
+            "type": "String"
+        },
+        "sessionToken": {
+            "type": "String"
+        },
+        "expiresAt": {
+            "type": "Date"
+        },
+        "createdWith": {
+            "type": "Object"
+        },
+        "restricted": {
+            "type": "Boolean"
+        }
+    },
+    "classLevelPermissions": {
+        "find": {
+            "*": true
+        },
+        "count": {
+            "*": true
+        },
+        "get": {
+            "*": true
+        },
+        "create": {
+            "*": true
+        },
+        "update": {
+            "*": true
+        },
+        "delete": {
+            "*": true
+        },
+        "addField": {
+            "*": true
+        },
+        "protectedFields": {
+            "*": []
+        }
+    },
+    "indexes": {
+        "_id_": {
+            "_id": 1
+        }
+    }
+}

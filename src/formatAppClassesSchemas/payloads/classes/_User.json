@@ -1,0 +1,120 @@
+{
+    "className": "_User",
+    "fields": {
+        "objectId": {
+            "type": "String"
+        },
+        "createdAt": {
+            "type": "Date"
+        },
+        "updatedAt": {
+            "type": "Date"
+        },
+        "ACL": {
+            "type": "ACL"
+        },
+        "username": {
+            "type": "String"
+        },
+        "password": {
+            "type": "String"
+        },
+        "email": {
+            "type": "String"
+        },
+        "emailVerified": {
+            "type": "Boolean"
+        },
+        "authData": {
+            "type": "Object"
+        },
+        "installations": {
+            "type": "Array"
+        },
+        "lastname": {
+            "type": "String"
+        },
+        "gender": {
+            "type": "String"
+        },
+        "birthday": {
+            "type": "Date"
+        },
+        "firstname": {
+            "type": "String"
+        },
+        "settings": {
+            "type": "Object"
+        },
+        "lastSeenOnline": {
+            "type": "Date"
+        },
+        "cover": {
+            "type": "File"
+        },
+        "adressSocials": {
+            "type": "Array"
+        },
+        "workTypes": {
+            "type": "Array"
+        },
+        "phoneNumber": {
+            "type": "String"
+        },
+        "stripeCustomerId": {
+            "type": "String"
+        },
+        "addresses": {
+            "type": "Array"
+        },
+        "inUsersIn": {
+            "type": "Array"
+        }
+    },
+    "classLevelPermissions": {
+        "find": {
+            "requiresAuthentication": true
+        },
+        "count": {
+            "requiresAuthentication": true
+        },
+        "get": {
+            "requiresAuthentication": true
+        },
+        "create": {
+            "*": true
+        },
+        "update": {
+            "requiresAuthentication": true
+        },
+        "delete": {
+            "requiresAuthentication": true
+        },
+        "addField": {
+            "*": true
+        },
+        "protectedFields": {
+            "*": []
+        }
+    },
+    "indexes": {
+        "_id_": {
+            "_id": 1
+        },
+        "lastname_text": {
+            "lastname": "text"
+        },
+        "username_1": {
+            "username": 1
+        },
+        "case_insensitive_username": {
+            "username": 1
+        },
+        "email_1": {
+            "email": 1
+        },
+        "case_insensitive_email": {
+            "email": 1
+        }
+    }
+}

@@ -1,0 +1,48 @@
+{
+    "className": "ServableApp",
+    "fields": {
+        "id": {
+            "type": "String"
+        },
+        "name": {
+            "type": "String"
+        },
+        "subName": {
+            "type": "String"
+        },
+        "description": {
+            "type": "String"
+        }
+    },
+    "classLevelPermissions": {
+        "find": {
+            "requiresAuthentication": true
+        },
+        "count": {
+            "requiresAuthentication": true
+        },
+        "get": {
+            "requiresAuthentication": true
+        },
+        "create": {
+            "*": true
+        },
+        "update": {
+            "requiresAuthentication": true
+        },
+        "delete": {
+            "requiresAuthentication": true
+        },
+        "addField": {
+            "*": true
+        },
+        "protectedFields": {
+            "*": []
+        }
+    },
+    "indexes": {
+        "_id_": {
+            "_id": 1
+        }
+    }
+}
