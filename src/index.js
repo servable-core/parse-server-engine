@@ -1,5 +1,3 @@
-
-
 import createApp from './express/index.js'
 import createHttpServer from './httpServer/index.js'
 import launchWithNoMigration from './launchWithNoMigration/index.js'

@@ -1,9 +1,9 @@
 {
-  "type": "frameworkbridge",
+  "type": "engine",
   "version": "1.0.0",
   "id": "@servable/parse-server-engine",
-  "name": "Parse Server Bridge",
-  "description": "Parse Server Bridge with Agenda for jobs. Comes with a complete system management for Parse dashboad, cache and livequery.",
+  "name": "Parse Server Engine",
+  "description": "Parse Server Engine with Agenda for jobs. Comes with a complete system management for Parse dashboad, cache and livequery.",
   "homepage": "",
   "icon": "",
   "author": {
