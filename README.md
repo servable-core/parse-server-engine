@@ -11,9 +11,9 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![JavaScript Style Guide](https://img.shields.io/badge/code_style-standard-brightgreen.svg)](https://standardjs.com)
 
-Servable engine is the core component of the Servable eco-system.
+Servable server is the core component of the Servable eco-system.
 It orchestrates the server deployment, the protocols registration and execution and more.
-Servable engine is used by the Servable CLI to generate new projects.
+Servable server is used by the Servable CLI to generate new projects.
 
 ## Documentation
 You can find here the complete [servable documentation](https://docs.servable.app/) with guides and api reference.

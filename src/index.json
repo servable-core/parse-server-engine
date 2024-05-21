@@ -225,13 +225,14 @@
             "id": "isnumber"
           }
         ],
-        "transformers": {
-          "in": [
-            {
-              "id": "getPort"
-            }
-          ]
-        },
+        "transformers": [
+          {
+            "modes": [
+              "in"
+            ],
+            "id": "getPort"
+          }
+        ],
         "sideEffects": [
           {
             "position": "after",
@@ -281,13 +282,14 @@
             "name": "appUseCache"
           }
         ],
-        "transformers": {
-          "in": [
-            {
-              "id": "getPort"
-            }
-          ]
-        }
+        "transformers": [
+          {
+            "modes": [
+              "in"
+            ],
+            "id": "getPort"
+          }
+        ]
       },
       {
         "prompt": {
@@ -322,13 +324,14 @@
             "name": "useLiveQueryServer"
           }
         ],
-        "transformers": {
-          "in": [
-            {
-              "id": "getPort"
-            }
-          ]
-        }
+        "transformers": [
+          {
+            "modes": [
+              "in"
+            ],
+            "id": "getPort"
+          }
+        ]
       },
       {
         "name": "appLiveQueryCachePort",
@@ -349,13 +352,14 @@
             "name": "useLiveQueryServer"
           }
         ],
-        "transformers": {
-          "in": [
-            {
-              "id": "getPort"
-            }
-          ]
-        }
+        "transformers": [
+          {
+            "modes": [
+              "in"
+            ],
+            "id": "getPort"
+          }
+        ]
       },
       {
         "name": "appUseLocalS3",
@@ -454,13 +458,14 @@
             "name": "appUseLocalS3"
           }
         ],
-        "transformers": {
-          "in": [
-            {
-              "id": "getPort"
-            }
-          ]
-        }
+        "transformers": [
+          {
+            "modes": [
+              "in"
+            ],
+            "id": "getPort"
+          }
+        ]
       },
       {
         "name": "appS3UIPort",
@@ -481,13 +486,14 @@
             "name": "appUseLocalS3"
           }
         ],
-        "transformers": {
-          "in": [
-            {
-              "id": "getPort"
-            }
-          ]
-        }
+        "transformers": [
+          {
+            "modes": [
+              "in"
+            ],
+            "id": "getPort"
+          }
+        ]
       },
       {
         "name": "appUseDashboard",
@@ -554,13 +560,14 @@
             "name": "appUseDashboard"
           }
         ],
-        "transformers": {
-          "in": [
-            {
-              "id": "getPort"
-            }
-          ]
-        }
+        "transformers": [
+          {
+            "modes": [
+              "in"
+            ],
+            "id": "getPort"
+          }
+        ]
       },
       {
         "type": "string",
@@ -648,13 +655,14 @@
             "operand": "standalone"
           }
         ],
-        "transformers": {
-          "in": [
-            {
-              "id": "getPort"
-            }
-          ]
-        }
+        "transformers": [
+          {
+            "modes": [
+              "in"
+            ],
+            "id": "getPort"
+          }
+        ]
       }
     ]
   },
