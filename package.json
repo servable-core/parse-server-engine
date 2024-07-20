@@ -89,6 +89,7 @@
     "parse-server": "^5.4.0",
     "parse-server-s3like-adapter": "^2.0.1",
     "parse-server-sendgrid-adapter": "^1.0.0",
+    "path-sanitizer": "^2.0.0",
     "query-string-parse": "^1.1.1",
     "sharp": "0.30.7",
     "underscore": "^1.13.3",

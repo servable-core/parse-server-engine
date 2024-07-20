@@ -1,21 +1,15 @@
+import memory from "./memory"
+import empty from "../empty.js"
 
-
-import mcache from 'memory-cache'
-
-export default (duration) => {
-    return (req, res, next) => {
-        let key = '__express__' + req.originalUrl || req.url
-        let cachedBody = mcache.get(key)
-        if (cachedBody) {
-            res.send(cachedBody)
-            return
-        } else {
-            res.sendResponse = res.send
-            res.send = (body) => {
-                mcache.put(key, body, duration * 1000);
-                res.sendResponse(body)
-            }
-            next()
-        }
+export default ({ cache = {} }) => {
+  const { type, params } = cache
+  switch (type) {
+    case 'inMemory': {
+      const { duration = 10 } = params
+      return memory({ duration })
     }
+    default: {
+      return empty
+    }
+  }
 }

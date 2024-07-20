@@ -1,7 +1,28 @@
+import requestAdapter from './adapters/request'
 
-export default async ({ handler, request, response, next }) => {
+export default async ({ servableArguments, handler, request, response, next }) => {
   try {
-    const result = await handler(request, response, next)
+    const _request = requestAdapter({ request })
+    const native = {
+      request,
+      response,
+      next
+    }
+
+    const _servableArguments = await servableArguments({
+      request: _request,
+      response,
+      native
+    })
+
+    const result = await handler({
+      request: _request,
+      response,
+      next,
+      native,
+      ..._servableArguments
+    })
+
     if (result) {
       response.status(200).send(result)
       // response.send(result)
@@ -13,3 +34,4 @@ export default async ({ handler, request, response, next }) => {
     next(e)
   }
 }
+
