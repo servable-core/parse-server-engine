@@ -1,8 +1,10 @@
 import _cache from "./cache/index.js"
 import _rateLimiter from './rateLimiter/index.js'
 import bodyParser from 'body-parser'
-import doHandle from './doHandle.js'
+import processHttp from './process/http.js'
 import sanitizePath from 'path-sanitizer'
+import processFunction from './process/function.js'
+
 export default ({ servableConfig }) => {
   const item = {}
 
@@ -27,20 +29,38 @@ export default ({ servableConfig }) => {
     } = options
 
     const urls = paths ? paths : (path ? [path] : (url ? [url] : []))
-    return Promise.all(urls.map(async _url => {
-      let __url = prefix ? `${prefix}/${_url}` : _url
-      __url = `/${sanitizePath(__url)}`
-
+    return Promise.all(urls.map(async _path => {
       switch (method.toLowerCase()) {
         case 'get': {
+          let __url = prefix ? `${prefix}/${_path}` : _path
+          __url = `/${sanitizePath(__url)}`
           Servable.AppNative.get(
-            _url,
+            __url,
             _cache({ cache: options.cache }),
             _rateLimiter({
               rateLimiting: options.rateLimiting
             }),
             async (request, response, next) => {
-              await doHandle({
+              await processHttp({
+                servableArguments,
+                handler,
+                request,
+                response,
+                next
+              })
+            })
+        } break
+        case 'function': {
+          let __url = prefix ? `${prefix}/${_path}` : _path
+          __url = `/functions/${sanitizePath(__url)}`
+          Servable.AppNative.get(
+            __url,
+            // _cache({ cache: options.cache }),
+            _rateLimiter({
+              rateLimiting: options.rateLimiting
+            }),
+            async (request, response, next) => {
+              await processFunction({
                 servableArguments,
                 handler,
                 request,
@@ -50,8 +70,10 @@ export default ({ servableConfig }) => {
             })
         } break
         case 'post': {
+          let __url = prefix ? `${prefix}/${_path}` : _path
+          __url = `/${sanitizePath(__url)}`
           Servable.AppNative.post(
-            _url,
+            __url,
             _rateLimiter({
               rateLimiting: options.rateLimiting
             }),
@@ -59,7 +81,7 @@ export default ({ servableConfig }) => {
               type: _request.type ? _request.type : 'application/json'
             }),
             async (request, response, next) => {
-              await doHandle({
+              await processHttp({
                 servableArguments,
                 handler,
                 request,
@@ -69,8 +91,10 @@ export default ({ servableConfig }) => {
             })
         } break
         case 'put': {
+          let __url = prefix ? `${prefix}/${_path}` : _path
+          __url = `/${sanitizePath(__url)}`
           Servable.AppNative.put(
-            _url,
+            __url,
             _rateLimiter({
               rateLimiting: options.rateLimiting
             }),
@@ -78,7 +102,7 @@ export default ({ servableConfig }) => {
               type: _request.type ? _request.type : 'application/json'
             }),
             async (request, response, next) => {
-              await doHandle({
+              await processHttp({
                 servableArguments,
                 handler,
                 request,
@@ -88,8 +112,10 @@ export default ({ servableConfig }) => {
             })
         } break
         case 'update': {
+          let __url = prefix ? `${prefix}/${_path}` : _path
+          __url = `/${sanitizePath(__url)}`
           Servable.AppNative.update(
-            _url,
+            __url,
             _rateLimiter({
               rateLimiting: options.rateLimiting
             }),
@@ -97,7 +123,7 @@ export default ({ servableConfig }) => {
               type: _request.type ? _request.type : 'application/json'
             }),
             async (request, response, next) => {
-              await doHandle({
+              await processHttp({
                 servableArguments,
                 handler,
                 request,
@@ -107,8 +133,10 @@ export default ({ servableConfig }) => {
             })
         } break
         case 'delete': {
+          let __url = prefix ? `${prefix}/${_path}` : _path
+          __url = `/${sanitizePath(__url)}`
           Servable.AppNative.delete(
-            _url,
+            __url,
             _rateLimiter({
               rateLimiting: options.rateLimiting
             }),
@@ -116,7 +144,7 @@ export default ({ servableConfig }) => {
               type: _request.type ? _request.type : 'application/json'
             }),
             async (request, response, next) => {
-              await doHandle({
+              await processHttp({
                 servableArguments,
                 handler,
                 request,
@@ -126,8 +154,10 @@ export default ({ servableConfig }) => {
             })
         } break
         case 'options': {
+          let __url = prefix ? `${prefix}/${_path}` : _path
+          __url = `/${sanitizePath(__url)}`
           Servable.AppNative.options(
-            _url,
+            __url,
             _rateLimiter({
               rateLimiting: options.rateLimiting
             }),
@@ -135,7 +165,7 @@ export default ({ servableConfig }) => {
               type: _request.type ? _request.type : 'application/json'
             }),
             async (request, response, next) => {
-              await doHandle({
+              await processHttp({
                 servableArguments,
                 handler,
                 request,

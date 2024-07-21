@@ -1,4 +1,4 @@
-import requestAdapter from './adapters/request'
+import requestAdapter from '../adapters/request'
 
 export default async ({ servableArguments, handler, request, response, next }) => {
   try {
@@ -15,7 +15,11 @@ export default async ({ servableArguments, handler, request, response, next }) =
       native
     })
 
+    const { userResolver } = _servableArguments
+    const user = await userResolver()
+
     const result = await handler({
+      user,
       request: _request,
       response,
       next,
