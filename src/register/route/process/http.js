@@ -1,6 +1,11 @@
 import requestAdapter from '../adapters/request'
 
-export default async ({ servableArguments, handler, request, response, next }) => {
+export default async ({
+  servableArguments,
+  handler,
+  request,
+  response,
+  next }) => {
   try {
     const _request = requestAdapter({ request })
     const native = {

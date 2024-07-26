@@ -4,6 +4,7 @@ import bodyParser from 'body-parser'
 import processHttp from './process/http.js'
 import sanitizePath from 'path-sanitizer'
 import processFunction from './process/function.js'
+import uploadfile from "./verbs/uploadfile/index.js"
 
 export default ({ servableConfig }) => {
   const item = {}
@@ -42,25 +43,6 @@ export default ({ servableConfig }) => {
             }),
             async (request, response, next) => {
               await processHttp({
-                servableArguments,
-                handler,
-                request,
-                response,
-                next
-              })
-            })
-        } break
-        case 'function': {
-          let __url = prefix ? `${prefix}/${_path}` : _path
-          __url = `/functions/${sanitizePath(__url)}`
-          Servable.AppNative.get(
-            __url,
-            // _cache({ cache: options.cache }),
-            _rateLimiter({
-              rateLimiting: options.rateLimiting
-            }),
-            async (request, response, next) => {
-              await processFunction({
                 servableArguments,
                 handler,
                 request,
@@ -111,6 +93,7 @@ export default ({ servableConfig }) => {
               })
             })
         } break
+
         case 'update': {
           let __url = prefix ? `${prefix}/${_path}` : _path
           __url = `/${sanitizePath(__url)}`
@@ -173,6 +156,34 @@ export default ({ servableConfig }) => {
                 next
               })
             })
+        } break
+        case 'function': {
+          let __url = prefix ? `${prefix}/${_path}` : _path
+          __url = `/functions/${sanitizePath(__url)}`
+          Servable.AppNative.get(
+            __url,
+            // _cache({ cache: options.cache }),
+            _rateLimiter({
+              rateLimiting: options.rateLimiting
+            }),
+            async (request, response, next) => {
+              await processFunction({
+                servableArguments,
+                handler,
+                request,
+                response,
+                next
+              })
+            })
+        } break
+        case 'uploadfile': {
+          await uploadfile({
+            options,
+            path: _path,
+            rateLimiter: _rateLimiter,
+            processHttp,
+            prefix
+          })
         } break
         default: break
       }
