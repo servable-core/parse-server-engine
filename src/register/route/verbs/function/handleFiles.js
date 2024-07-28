@@ -94,7 +94,7 @@ export default async ({
     }),
     // multer({ dest: 'uploads/' }).single('file'),
     // upload.single('file'),
-    upload.array('files', 12),
+    upload.array('files'),
     // bodyParser.raw({
     //   type: _request.type ? _request.type : 'application/json'
     // }),
