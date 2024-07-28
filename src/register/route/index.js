@@ -3,8 +3,8 @@ import _rateLimiter from './rateLimiter/index.js'
 import bodyParser from 'body-parser'
 import processHttp from './process/http.js'
 import sanitizePath from 'path-sanitizer'
-import processFunction from './process/function.js'
-import uploadfile from "./verbs/uploadfile/index.js"
+// import uploadfile from "./verbs/uploadfile/index.js"
+import handleFunction from "./verbs/function/index.js"
 
 export default ({ servableConfig }) => {
   const item = {}
@@ -157,35 +157,28 @@ export default ({ servableConfig }) => {
               })
             })
         } break
+        default:
         case 'function': {
           let __url = prefix ? `${prefix}/${_path}` : _path
-          __url = `/functions/${sanitizePath(__url)}`
-          Servable.AppNative.get(
-            __url,
-            // _cache({ cache: options.cache }),
-            _rateLimiter({
-              rateLimiting: options.rateLimiting
-            }),
-            async (request, response, next) => {
-              await processFunction({
-                servableArguments,
-                handler,
-                request,
-                response,
-                next
-              })
-            })
-        } break
-        case 'uploadfile': {
-          await uploadfile({
+          __url = `/function/${sanitizePath(__url)}`
+          await handleFunction({
+            url: __url,
             options,
-            path: _path,
             rateLimiter: _rateLimiter,
-            processHttp,
-            prefix
+            servableArguments,
           })
         } break
-        default: break
+        // case 'uploadfile': {
+        //   await uploadfile({
+        //     options,
+        //     path: _path,
+        //     rateLimiter: _rateLimiter,
+        //     processHttp,
+        //     prefix,
+        //     servableArguments,
+        //   })
+        // } break
+
       }
     }))
   }

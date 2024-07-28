@@ -11,6 +11,8 @@ export default ({ request, }) => {
     complete: request.complete,
     aborted: request.aborted,
     baseUrl: request.baseUrl,
+    files: request.files,
+    file: request.file,
   }
 }
 

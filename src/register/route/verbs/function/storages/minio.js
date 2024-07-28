@@ -3,7 +3,7 @@ import multerMinIOStorage from 'multer-minio-storage'
 
 export default ({ bucketName, endPoint,
   accessKey,
-  secretKey, }) => {
+  secretKey, nameAdapter }) => {
 
   const minioClient = new Minio.Client({
     endPoint,
@@ -17,8 +17,10 @@ export default ({ bucketName, endPoint,
     metadata: function (req, file, cb) {
       cb(null, { fieldName: file.fieldname })
     },
-    key: function (req, file, cb) {
-      cb(null, Date.now().toString())
+    key: async function (req, file, cb) {
+      // cb(null, Date.now().toString())
+      const name = await nameAdapter({ file, request: req })
+      cb(null, name)
     }
   })
 

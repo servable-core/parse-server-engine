@@ -1,6 +1,6 @@
-import requestAdapter from '../adapters/request'
+import requestAdapter from '../../adapters/request'
 
-export default async ({ servableArguments, handler, request, response, next }) => {
+export default async ({ servableArguments, extra = {}, handler, request, response, next }) => {
   try {
     const _request = requestAdapter({ request })
     const native = {
@@ -16,7 +16,7 @@ export default async ({ servableArguments, handler, request, response, next }) =
     })
 
     const { userResolver } = _servableArguments
-    const user = await userResolver()
+    const user = await userResolver({ request })
 
     const result = await handler({
       user,
@@ -24,7 +24,8 @@ export default async ({ servableArguments, handler, request, response, next }) =
       response,
       next,
       native,
-      ..._servableArguments
+      ..._servableArguments,
+      ...extra
     })
 
     if (result) {
@@ -32,10 +33,13 @@ export default async ({ servableArguments, handler, request, response, next }) =
       // response.send(result)
     }
   } catch (e) {
-    const { message = "An error occurred", code = 500 } = e
+    const a = {
+      message: e.message ? e.message : "An error occurred",
+      code: e.code ? e.code : 520
+    }
     // response.status(code).send(message)
     // response.status(code)
-    next(e)
+    next(a)
   }
 }
 

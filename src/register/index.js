@@ -12,6 +12,7 @@ export default async ({ servableConfig }) => ({
   Cloud: Parse.Cloud,
   User: Parse.User,
   Role: Parse.Role,
+  File: Parse.File,
   Installation: Parse.Installation,
   LiveQuery: Parse.LiveQuery,
   Session: Parse.Session,
