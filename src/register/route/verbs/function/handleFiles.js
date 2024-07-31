@@ -92,8 +92,6 @@ export default async ({
     rateLimiter({
       rateLimiting: options.rateLimiting
     }),
-    // multer({ dest: 'uploads/' }).single('file'),
-    // upload.single('file'),
     upload.array('files'),
     // bodyParser.raw({
     //   type: _request.type ? _request.type : 'application/json'

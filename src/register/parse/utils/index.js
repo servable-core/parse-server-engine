@@ -110,9 +110,9 @@ export const fetchObject = async ({
 export const destroyRowsWithQuery = async ({ query, limitPerBatch } = {}) => {
   query
     .limit(limitPerBatch)
-    .find()
-    .then(function(results) {
-      return Servable.App.Object.destroyAll(results).then(function() {
+    .find({ useMasterKey: true })
+    .then(function (results) {
+      return Servable.App.Object.destroyAll(results).then(function () {
         return Promise.resolve(results.length);
       });
     });
@@ -122,7 +122,7 @@ export const destroyAllRowsWithQuery = async ({
   query,
   limitPerBatch = 1000
 } = {}) => {
-  return destroyRowsWithQuery({ query, limitPerBatch }).then(function(count) {
+  return destroyRowsWithQuery({ query, limitPerBatch }).then(function (count) {
     return count
       ? destroyAllRowsWithQuery({ query, limitPerBatch })
       : Promise.resolve();

@@ -71,7 +71,7 @@
             "type": "Array"
         }
     },
-    "classLevelPermissions": {
+    "classLevelPermissions_": {
         "find": {
             "requiresAuthentication": true
         },

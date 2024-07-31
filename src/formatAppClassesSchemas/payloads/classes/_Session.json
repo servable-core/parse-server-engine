@@ -33,7 +33,7 @@
             "type": "Boolean"
         }
     },
-    "classLevelPermissions": {
+    "classLevelPermissions_": {
         "find": {
             "*": true
         },

@@ -14,7 +14,7 @@
             "type": "String"
         }
     },
-    "classLevelPermissions": {
+    "classLevelPermissions_": {
         "find": {
             "requiresAuthentication": true
         },
