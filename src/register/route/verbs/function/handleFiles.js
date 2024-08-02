@@ -154,7 +154,7 @@ export default async ({
       }
       await processFunction({
         servableArguments,
-        handler: options.handler,
+        options,
         request,
         response,
         next,

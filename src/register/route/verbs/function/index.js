@@ -22,7 +22,7 @@ export default async ({
       async (request, response, next) => {
         await processFunction({
           servableArguments,
-          handler: options.handler,
+          options,
           request,
           response,
           next

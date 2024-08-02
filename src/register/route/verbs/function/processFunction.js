@@ -1,7 +1,17 @@
 import requestAdapter from '../../adapters/request'
 
-export default async ({ servableArguments, extra = {}, handler, request, response, next }) => {
+export default async ({
+  servableArguments,
+  extra = {},
+  options: {
+    handler,
+    requireUser = false //#TODO: add requireUserKeys https://docs.parseplatform.org/cloudcode/guide/#cloud-functions
+  },
+  request,
+  response,
+  next }) => {
   try {
+    // throw { code: 209, message: "invalid session token" }
     const _request = requestAdapter({ request })
     const native = {
       request,
@@ -17,6 +27,9 @@ export default async ({ servableArguments, extra = {}, handler, request, respons
 
     const { userResolver } = _servableArguments
     const user = await userResolver({ request })
+    if (requireUser && !user) {
+      throw { code: 209, message: "invalid session token" }
+    }
 
     const result = await handler({
       user,
@@ -37,9 +50,9 @@ export default async ({ servableArguments, extra = {}, handler, request, respons
       message: e.message ? e.message : "An error occurred",
       code: e.code ? e.code : 520
     }
-    // response.status(code).send(message)
+    response.status(a.code).send(a.message)
     // response.status(code)
-    next(a)
+    // next(a)
   }
 }
 
