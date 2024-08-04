@@ -14,11 +14,11 @@ export default async ({
       next
     }
 
-    const _servableArguments = await servableArguments({
+    const _servableArguments = servableArguments ? await servableArguments({
       request: _request,
       response,
       native
-    })
+    }) : {}
 
     const result = await handler({
       request: _request,
