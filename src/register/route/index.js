@@ -159,8 +159,9 @@ export default ({ servableConfig }) => {
         } break
         default:
         case 'function': {
-          let __url = prefix ? `${prefix}/${_path}` : _path
-          __url = `/function/${sanitizePath(__url)}`
+          let __url = `/function/${_path}`
+          __url = prefix ? `${prefix}/${__url}` : __url
+          __url = `/${sanitizePath(__url)}`
           await handleFunction({
             url: __url,
             options,
