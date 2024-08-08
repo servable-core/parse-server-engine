@@ -20,6 +20,9 @@ export default ({ rateLimiting = {} }) => {
         message,
         standardHeaders, // Return rate limit info in the `RateLimit-*` headers
         legacyHeaders, // Disable the `X-RateLimit-*` headers,
+        validate: {
+          xForwardedForHeader: false //https://express-rate-limit.mintlify.app/reference/error-codes#err-erl-unexpected-x-forwarded-for
+        }
       })
     }
     default: {
