@@ -5,16 +5,16 @@ export default async (props) => {
   const { schema, configuration, app } = props
   console.log('[PARSE_SERVER_ADAPTER]', '[DEBUG]', 'launchwithmigration>', schema, configuration)
 
-  const { appFeature, liveClasses } = schema
+  const { appProtocol, liveClasses } = schema
   const {
     classes: { all: definitions },
-  } = appFeature.schema
+  } = appProtocol.schema
 
   let state = 0
 
   const migrationSchema = {
     beforeMigration: () => {
-      console.debug(`---------------- 🐝 ${schema.features.length} features 🐝:\n ${schema.features.map(a => ` ${a.id}${(a.type === 'app') ? ' (app)' : ''}`)}`)
+      console.debug(`---------------- 🐝 ${schema.protocols.length} protocols 🐝:\n ${schema.protocols.map(a => ` ${a.id}${(a.type === 'app') ? ' (app)' : ''}`)}`)
       state = 1
     },
     afterMigration: async () => {
