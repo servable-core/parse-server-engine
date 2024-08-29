@@ -48,9 +48,12 @@ export default async ({
   } catch (e) {
     const a = {
       message: e.message ? e.message : "An error occurred",
-      code: e.code ? e.code : 520
+      code: e.code ? e.code : 520,
+      messageId: e.messageId,
     }
-    response.status(a.code).send(a.message)
+    // next(a)
+    // response.send(a)
+    response.status(a.code).json({ error: a.message })
     // response.status(code)
     // next(a)
   }
