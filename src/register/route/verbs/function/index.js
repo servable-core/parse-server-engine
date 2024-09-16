@@ -1,6 +1,6 @@
-import bodyParser from 'body-parser'
-import handleFiles from './handleFiles.js'
-import processFunction from './processFunction.js'
+import bodyParser from 'body-parser';
+import handleFiles from './handleFiles.js';
+import processFunction from './processFunction.js';
 
 export default async ({
   options,
@@ -8,6 +8,12 @@ export default async ({
   servableArguments,
   url
 }) => {
+  // Servable.AppNative.use((req, res, next) => {
+  //   res.append('Access-Control-Allow-Origin', ['*']);
+  //   res.append('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE');
+  //   res.append('Access-Control-Allow-Headers', 'Content-Type');
+  //   next();
+  // });
 
   if (!options.files) {
     Servable.AppNative.post(

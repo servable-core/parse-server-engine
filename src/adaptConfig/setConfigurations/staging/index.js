@@ -25,9 +25,8 @@ export default (props) => {
       ...(props.configuration.config ? props.configuration.config : {}),
       parse: {
         ...configuration.config.parse,
-        mountPath: process.env.SERVABLE_MOUNT_STAGING,
-        serverURL: `${process.env.SERVABLE_SERVER_URL}${process.env.SERVABLE_MOUNT_STAGING}`,
-        publicServerURL: `${process.env.SERVABLE_PUBLIC_SERVER_URL}${process.env.SERVABLE_MOUNT_STAGING}`,
+        mountPath: '/parsestaging',
+        serverURL: `${process.env.SERVABLE_SERVER_HOST}:${process.env.SERVABLE_SERVER_PORT}/parsestaging`,
         ...((props.configuration.config && props.configuration.config.parse) ? props.configuration.config.parse : {}),
       }
     }

@@ -1,4 +1,3 @@
-import push from "../adapters/push.js"
 import createCacheAdapter from '../adapters/cache.js'
 
 export default (props) => {
@@ -20,14 +19,13 @@ export default (props) => {
         verbose: parseInt(process.env.SERVABLE_VERBOSE),
 
         appId: process.env.SERVABLE_APP_ID,
-        serverURL: `${process.env.SERVABLE_SERVER_URL}${process.env.SERVABLE_MOUNT}`,
-        publicServerURL: `${process.env.SERVABLE_PUBLIC_SERVER_URL}${process.env.SERVABLE_MOUNT}`,
+        serverURL: `${process.env.SERVABLE_SERVER_HOST}:${process.env.SERVABLE_SERVER_PORT}/parse`,
         appName: process.env.SERVABLE_APP_NAME,
         masterKey: process.env.SERVABLE_MASTER_KEY,
 
-        restApiKey: process.env.SERVABLE_REST_API_KEY,
-        javascriptKey: process.env.SERVABLE_JAVASCRIPT_KEY,
-        // MaxUploadSize: process.env.MAX_UPLOAD_SIZE,
+        // restApiKey: process.env.SERVABLE_REST_API_KEY,
+        // javascriptKey: process.env.SERVABLE_JAVASCRIPT_KEY,
+        // MaxUploadSize: process.env.ENGINE_MAX_UPLOAD_SIZE,
 
         // emailAdapter,
         // filesAdapter,
@@ -37,16 +35,16 @@ export default (props) => {
         verifyUserEmails: false,
         // EmailVerifyTokenValidityDuration: process.env.EMAIL_VERIFY_TOKEN_VALIDITY_DURATION_IS_SET ? process.env.EMAIL_VERIFY_TOKEN_VALIDITY_DURATION_HOURS * 60 * 60 : undefined, // in seconds (2 hours = 7200 seconds)
         // preventLoginWithUnverifiedEmail: process.env.SERVABLE_PREVENT_LOGIN_WITH_UNVERIFIED_EMAIL,
-        auth: {
-          apple: {
-            client_id: process.env.SERVABLE_APP_BUNDLE_ID
-          },
-          google: {}
-        },
+        // auth: {
+        //   apple: {
+        //     client_id: process.env.SERVABLE_APP_BUNDLE_ID
+        //   },
+        //   google: {}
+        // },
         loggerAdapter: {
           module: "parse-server/lib/Adapters/Logger/WinstonLoggerAdapter",
           options: {
-            logLevel: process.env.SERVABLE_LOG_LEVEL
+            logLevel: process.env.SERVABLE_LOG_LEVEL ? process.env.SERVABLE_LOG_LEVEL : 'verbose'
           }
         },
         liveQuery: {
@@ -57,7 +55,7 @@ export default (props) => {
             : {})
         },
         schema: {},
-        mountPath: process.env.SERVABLE_MOUNT || "/parse",
+        mountPath: "/parse",
         ...((props.configuration.config && props.configuration.config.parse) ? props.configuration.config.parse : {}),
         databaseURI: payload.databaseURI ? payload.databaseURI : process.env.SERVABLE_DATABASE_URI,
       },
@@ -70,17 +68,16 @@ export default (props) => {
       filesAdapter: {
         module: "parse-server-s3like-adapter",
         options: {
-          accessKey: process.env.SERVABLE_OBJECTSTORAGE_ROOT_USER,
-          secretKey: process.env.SERVABLE_OBJECTSTORAGE_ROOT_PASSWORD,
-          bucket: process.env.SERVABLE_OBJECTSTORAGE_BUCKET_NAME,
+          accessKey: process.env.ENGINE_OBJECTSTORAGE_ROOT_USER,
+          secretKey: process.env.ENGINE_OBJECTSTORAGE_ROOT_PASSWORD,
+          bucket: process.env.ENGINE_OBJECTSTORAGE_BUCKET_NAME,
           direct: false,
-          endPoint: payload.filesAdapterEndPoint ? payload.filesAdapterEndPoint : process.env.SERVABLE_OBJECTSTORAGE_ENDPOINT
+          endPoint: payload.filesAdapterEndPoint ? payload.filesAdapterEndPoint : process.env.ENGINE_OBJECTSTORAGE_ENDPOINT
         }
       },
       cacheAdapter: configuration.config.parse.cacheAdapter
         ? configuration.config.parse.cacheAdapter
         : createCacheAdapter(props),
-      push,
       ...(configuration.config.parse ? configuration.config.parse : {}),
     }
     configuration.adaptedLive = true

@@ -4,7 +4,7 @@ import express from "express"
 import cors from 'cors'
 import compression from 'compression'
 //TODO:
-import parseServerImageResizeByurl from './middlewares/imageSize/index.js'
+// import parseServerImageResizeByurl from './middlewares/imageSize/index.js'
 //import imageHostMiddleware from './middlewares/imageHost'
 
 export default async () => {
@@ -32,17 +32,17 @@ export default async () => {
   //app.options('*', cors()) // include before other routes
 
   //TODO:
-  app.use(parseServerImageResizeByurl())
+  // app.use(parseServerImageResizeByurl())
   //app.use(imageHostMiddleware())
 
   //https://reactgo.com/request-entity-too-large-node/
   //File limit should be repercuted in express too:
   app.use(express.json({
-    limit: process.env.MAX_UPLOAD_SIZE
+    limit: process.env.ENGINE_MAX_UPLOAD_SIZE
   }))
 
   app.use(express.urlencoded({
-    limit: process.env.MAX_UPLOAD_SIZE,
+    limit: process.env.ENGINE_MAX_UPLOAD_SIZE,
     extended: true,
     parameterLimit: 1000000
   }))
