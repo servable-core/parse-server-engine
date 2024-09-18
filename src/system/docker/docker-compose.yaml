@@ -1,0 +1,48 @@
+version: "3.7"
+networks:
+  app:
+    driver: bridge
+services:
+  database-mongo:
+    image: mongo
+    restart: always
+    command: mongod --bind_ip_all
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: "<%= engineDatabaseRootUser %>"
+      MONGO_INITDB_ROOT_PASSWORD: "<%= engineDatabaseRootPassword %>"
+      MONGO_INITDB_DATABASE: "<%= engineDatabaseDefaultDatabase %>"
+    ports:
+      - 27017:27017
+    volumes:
+      - ./mongo/:/data/db
+    networks:
+      - app
+  dashboard:
+    image: adoucoure/servable-dashboard:v1
+    restart: always
+    ports:
+      - 4040:4040
+    environment:
+      PARSE_DASHBOARD_SERVER_URL: "<%= serverURL %><%= engineMount %>"
+      PARSE_DASHBOARD_MASTER_KEY: "<%= masterKey %>"
+      PARSE_DASHBOARD_APP_ID: "<%= appID %>"
+      PARSE_DASHBOARD_APP_NAME: "<%= appName %>"
+      PARSE_DASHBOARD_USER_ID:  "<%= engineDashboardUserId %>"
+      PARSE_DASHBOARD_USER_PASSWORD:  "<%= engineDashboardUserPassword %>"
+      PARSE_DASHBOARD_ALLOW_INSECURE_HTTP: 1
+    networks:
+      - app
+  minio:
+    image: bitnami/minio:latest
+    restart: always
+    ports:
+      - 9001:9001
+      - 9000:9000
+    environment:
+      MINIO_ROOT_USER: "<%= engineObjectStorageRootUsername %>"
+      MINIO_ROOT_PASSWORD: "<%= engineObjectStorageRootPassword %>"
+      MINIO_DEFAULT_BUCKETS: "<%= engineObjectStorageBucketName %>"
+    volumes:
+      - ./minio:/data
+    networks:
+      - app

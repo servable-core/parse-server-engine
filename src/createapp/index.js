@@ -7,7 +7,7 @@ import compression from 'compression'
 // import parseServerImageResizeByurl from './middlewares/imageSize/index.js'
 //import imageHostMiddleware from './middlewares/imageHost'
 
-export default async () => {
+export default async ({ servableConfig }) => {
   const app = express()
 
   // const whitelist = [
@@ -38,11 +38,11 @@ export default async () => {
   //https://reactgo.com/request-entity-too-large-node/
   //File limit should be repercuted in express too:
   app.use(express.json({
-    limit: process.env.ENGINE_MAX_UPLOAD_SIZE
+    limit: servableConfig.envs['engineMaxUploadSize'],
   }))
 
   app.use(express.urlencoded({
-    limit: process.env.ENGINE_MAX_UPLOAD_SIZE,
+    limit: servableConfig.envs['engineMaxUploadSize'],
     extended: true,
     parameterLimit: 1000000
   }))

@@ -38,7 +38,7 @@ export default ({ servableConfig }) => {
     const humanInterval = (await import('human-interval')).default
     const agenda = new Agenda({
       db: {
-        address: servableConfig.configurations[0].config.parse.databaseURI
+        address: servableConfig.configuration.config.parse.databaseURI
       }
     });
     agenda.define(name, handler, options,)
