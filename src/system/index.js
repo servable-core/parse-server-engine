@@ -21,12 +21,6 @@ export default {
     path: () => {
       return `${__dirname}/docker`
     },
-    amendServices: async ({
-      services,
-      servableConfig,
-    }) => {
-
-    }
   },
   adaptAppPayload: async ({
     item,
@@ -38,7 +32,7 @@ export default {
       return {}
     }
 
-    const mongoService = config.services['database-mongo']
+    const mongoService = config.services['engine-database-mongo']
     const configSERVABLE_DATABASE_URI = mongoService ?
       `mongodb://${mongoService.environment.MONGO_INITDB_ROOT_USERNAME}:${mongoService.environment.MONGO_INITDB_ROOT_PASSWORD}@localhost:${mongoService.ports[0].published}/${mongoService.environment.MONGO_INITDB_DATABASE}?authSource=admin&readPreference=primary&ssl=false`
       : ''
@@ -47,7 +41,7 @@ export default {
       `mongodb://${mongoService.environment.MONGO_INITDB_ROOT_USERNAME}:${mongoService.environment.MONGO_INITDB_ROOT_PASSWORD}@localhost:${mongoService.ports[0].published}/utils?authSource=admin&readPreference=primary&ssl=false`
       : ''
 
-    const storageService = config.services['minio']
+    const storageService = config.services['engine-minio']
     const filesAdapterEndPoint = `http://localhost:${storageService.ports[0].published}`
 
     const liveQueryService = config.services['liveserver-redis-cache']

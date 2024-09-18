@@ -3,7 +3,7 @@ networks:
   app:
     driver: bridge
 services:
-  database-mongo:
+  engine-database-mongo:
     image: mongo
     restart: always
     command: mongod --bind_ip_all
@@ -17,7 +17,7 @@ services:
       - ./mongo/:/data/db
     networks:
       - app
-  dashboard:
+  engine-dashboard:
     image: adoucoure/servable-dashboard:v1
     restart: always
     ports:
@@ -32,7 +32,7 @@ services:
       PARSE_DASHBOARD_ALLOW_INSECURE_HTTP: 1
     networks:
       - app
-  minio:
+  engine-minio:
     image: bitnami/minio:latest
     restart: always
     ports:
