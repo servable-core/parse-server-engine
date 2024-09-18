@@ -1,7 +1,3 @@
-version: "3.7"
-networks:
-  app:
-    driver: bridge
 services:
   engine-database-mongo:
     image: mongo
@@ -15,8 +11,6 @@ services:
       - 27017:27017
     volumes:
       - ./mongo/:/data/db
-    networks:
-      - app
   engine-dashboard:
     image: adoucoure/servable-dashboard:v1
     restart: always
@@ -30,19 +24,15 @@ services:
       PARSE_DASHBOARD_USER_ID:  "<%= engineDashboardUserId %>"
       PARSE_DASHBOARD_USER_PASSWORD:  "<%= engineDashboardUserPassword %>"
       PARSE_DASHBOARD_ALLOW_INSECURE_HTTP: 1
-    networks:
-      - app
   engine-minio:
     image: bitnami/minio:latest
     restart: always
     ports:
-      - 9001:9001
       - 9000:9000
+      - 9001:9001
     environment:
       MINIO_ROOT_USER: "<%= engineObjectStorageRootUsername %>"
       MINIO_ROOT_PASSWORD: "<%= engineObjectStorageRootPassword %>"
       MINIO_DEFAULT_BUCKETS: "<%= engineObjectStorageBucketName %>"
     volumes:
       - ./minio:/data
-    networks:
-      - app

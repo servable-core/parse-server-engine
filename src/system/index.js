@@ -41,8 +41,13 @@ export default {
       `mongodb://${mongoService.environment.MONGO_INITDB_ROOT_USERNAME}:${mongoService.environment.MONGO_INITDB_ROOT_PASSWORD}@localhost:${mongoService.ports[0].published}/utils?authSource=admin&readPreference=primary&ssl=false`
       : ''
 
+    let filesAdapterEndPoint
     const storageService = config.services['engine-minio']
-    const filesAdapterEndPoint = `http://localhost:${storageService.ports[0].published}`
+    if (storageService) {
+      const port = storageService.ports.find(a => a.target === 9000)
+      filesAdapterEndPoint = `http://localhost:${port.published}`
+    }
+
 
     const liveQueryService = config.services['liveserver-redis-cache']
     let engineRedisLiveServerDBURI = null
