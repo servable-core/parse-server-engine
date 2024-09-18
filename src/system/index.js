@@ -50,8 +50,6 @@ export default {
     const storageService = config.services['minio']
     const filesAdapterEndPoint = `http://localhost:${storageService.ports[0].published}`
 
-
-
     const liveQueryService = config.services['liveserver-redis-cache']
     let engineRedisLiveServerDBURI = null
     if (liveQueryService) {
@@ -59,7 +57,7 @@ export default {
     }
 
     return {
-      utilsDatabaseURI: envOr(process.env.SERVABLE_UTILS_DATABASE_URI, configSERVABLE_UTILS_DATABASE_URI),
+      utilsDatabaseURI: envOr(process.env.SERVABLE_UTILS_DATABASE_URI, configSERVABLE_UTILS_DATABASE_URI), //#TODO: remove from engine
       filesAdapterEndPoint: envOr(process.env.ENGINE_OBJECTSTORAGE_ENDPOINT, filesAdapterEndPoint),
       databaseURI: envOr(process.env.ENGINE_DATABASE_URI, configSERVABLE_DATABASE_URI),
     }

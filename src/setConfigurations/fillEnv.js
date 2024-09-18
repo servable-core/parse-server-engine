@@ -69,4 +69,14 @@ export default (servableConfig) => {
       process.env.ENGINE_MAX_UPLOAD_SIZE,
       "200000mb"
     ))
+
+  servableConfig.envs["filesAdapterEndPoint"] = envOr(
+    servableConfig.envs["filesAdapterEndPoint"],
+    process.env.ENGINE_OBJECTSTORAGE_ENDPOINT,
+  )
+
+  servableConfig.envs["databaseURI"] = envOr(
+    servableConfig.envs["databaseURI"],
+    process.env.ENGINE_DATABASE_URI,
+  )
 }
