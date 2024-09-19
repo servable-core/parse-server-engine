@@ -23,6 +23,7 @@ export default ({
 
         appId: servableConfig.envs.appID,
         serverURL: `${servableConfig.envs.serverURL}${servableConfig.envs.engineMount}`,
+        publicServerURL: `${servableConfig.envs.publicURI}${servableConfig.envs.engineMount}`,
         appName: servableConfig.envs.appName,
         masterKey: servableConfig.envs.masterKey,
 
