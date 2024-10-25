@@ -34,6 +34,7 @@ export default async ({
     const result = await handler({
       user,
       request: _request,
+      params: _request.query,
       response,
       next,
       native,
