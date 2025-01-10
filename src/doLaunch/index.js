@@ -9,6 +9,7 @@ export default async ({ config, serverCloseComplete, app }) => {
   const { parse: parseConfig } = config
   console.log('[PARSE_SERVER_ADAPTER]', '[DEBUG]', 'dolaunch>', config,)
   const schema = {
+
     ...(parseConfig.schema ? parseConfig.schema : {}),
     // Parse Schema API will be disabled
     // If you need to update schemas Parse server
@@ -23,6 +24,7 @@ export default async ({ config, serverCloseComplete, app }) => {
     recreateModifiedFields: false,
     // If true, Parse will delete non defined fields on a class. (Core fields are never deleted)
     deleteExtraFields: true,
+
     // LockSchemas: JSON.parse(process.env.SERVABLE_SCHEMA_LOCK_SCHEMAS) ? true : false,
     // strict: JSON.parse(process.env.SERVABLE_SCHEMA_STRICT) ? true : false,
     // recreateModifiedFields: JSON.parse(process.env.SERVABLE_SCHEMA_RECREATE_MODIFIED_FIELDS) ? true : false,
@@ -63,6 +65,7 @@ export default async ({ config, serverCloseComplete, app }) => {
 
   const options = {
     ...parseConfig,
+    verbose: (parseConfig.verbose && parseConfig.verbose !== undefined) ? parseConfig.verbose : 'warn', //#TODO: transmit verbose from envs properly
     allowClientClassCreation: false,
     // App: process.env.SERVABLE_CLOUD_CODE_MAIN || __dirname + "app/endpoints/parse/app/main.js",
     cloud: _path.resolve(__dirname, "./main.cjs"),
