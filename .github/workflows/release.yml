@@ -46,24 +46,24 @@ jobs:
           package-manager: yarn
           # working-directory: web/themes/custom/my-custom-theme
 
-  quality:
-    name: Quality 🐳
-    runs-on: ${{ matrix.os }}
-    needs: [check-code-analysis,check-lock-file-version]
-    strategy:
-      matrix:
-        # node-version: [10.x, 12.x, 14.x, 15.x]
-        node-version: [22.x]
-        # os: [ubuntu-latest, windows-latest]
-        os: [ubuntu-latest]
-        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v3
-    - uses: mskelton/setup-yarn@v1
-    - name: Install dependencies
-      run: yarn --frozen-lockfile
-    # - run: yarn test
+  # quality:
+  #   name: Quality 🐳
+  #   runs-on: ${{ matrix.os }}
+  #   needs: [check-code-analysis,check-lock-file-version]
+  #   strategy:
+  #     matrix:
+  #       # node-version: [10.x, 12.x, 14.x, 15.x]
+  #       node-version: [22.x]
+  #       # os: [ubuntu-latest, windows-latest]
+  #       os: [ubuntu-latest]
+  #       # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
+  #   steps:
+  #   - name: Checkout
+  #     uses: actions/checkout@v3
+  #   - uses: mskelton/setup-yarn@v1
+  #   - name: Install dependencies
+  #     run: yarn --frozen-lockfile
+  #   # - run: yarn test
 
   publish:
     name: Publish 🚀
