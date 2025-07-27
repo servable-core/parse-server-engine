@@ -5,7 +5,7 @@ import cors from 'cors'
 import compression from 'compression'
 //TODO:
 // import parseServerImageResizeByurl from './middlewares/imageSize/index.js'
-//import imageHostMiddleware from './middlewares/imageHost'
+//import imageHostMiddleware from './middlewares/imageHost/index.js'
 
 export default async ({ servableConfig }) => {
   const app = express()

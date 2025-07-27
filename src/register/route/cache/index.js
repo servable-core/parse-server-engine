@@ -1,4 +1,4 @@
-import memory from "./memory"
+import memory from "./memory/index.js"
 import empty from "../empty.js"
 
 export default ({ cache = {} }) => {

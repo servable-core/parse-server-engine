@@ -81,35 +81,37 @@ export default async ({ config, serverCloseComplete, app }) => {
     schema
   }
 
-  return new Promise(async (resolve, reject) => {
-    // http://parseplatform.org/parse-server/api/5.4.0/ParseServerOptions.html
-    const server = new ParseServer({
-      ...options,
-      serverCloseComplete: async () => {
-        console.log("[PARSE_SERVER_ADAPTER]", "serverCloseComplete")
-        serverCloseComplete && serverCloseComplete()
-      },
-      serverStartComplete: async error => {
-        // Here your Parse Server is ready
-        // with schemas up to date
 
-        if (error) {
-          reject(error)
-          return
-        }
 
-        console.log("[PARSE_SERVER_ADAPTER]",
-          "---------------- 😍😍 serverStartComplete, resolving 😍😍"
-        )
-        resolve(server)
-        // Just a code example if you want to expose
-        // an endpoint when parse is fully initialized
-        // parseServer.expressApp.get("/ready", (req: any, res: any) => {
-        //   res.send("true")
-        // })
+  // http://parseplatform.org/parse-server/api/5.4.0/ParseServerOptions.html
+  const server = new ParseServer({
+    ...options,
+    serverCloseComplete: async () => {
+      console.log("[PARSE_SERVER_ADAPTER]", "serverCloseComplete")
+      serverCloseComplete && serverCloseComplete()
+    },
+    serverStartComplete: async error => {
+      // Here your Parse Server is ready
+      // with schemas up to date
+
+      if (error) {
+        reject(error)
+        return
       }
-    })
-    // Await server.start()
-    app.use(config.parse.mountPath, server)
+
+      console.log("[PARSE_SERVER_ADAPTER]",
+        "---------------- 😍😍 serverStartComplete, resolving 😍😍"
+      )
+      resolve(server)
+      // Just a code example if you want to expose
+      // an endpoint when parse is fully initialized
+      // parseServer.expressApp.get("/ready", (req: any, res: any) => {
+      //   res.send("true")
+      // })
+    }
   })
+  // Await server.start()
+  await server.start()
+  app.use(config.parse.mountPath, server.app)
+  return server.app
 }

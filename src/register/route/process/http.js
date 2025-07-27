@@ -1,4 +1,4 @@
-import requestAdapter from '../adapters/request'
+import requestAdapter from '../adapters/request.js'
 
 export default async ({
   servableArguments,

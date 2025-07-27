@@ -3,7 +3,7 @@
 
 import { fileURLToPath } from "url"
 import { dirname } from "path"
-import envOr from '../lib/envOr'
+import envOr from '../lib/envOr.js'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
