@@ -9,7 +9,7 @@ export default ({ servableConfig }) => {
       id,
       handler,
       // name,
-      name: _name,
+      // name: _name,
       cron,
       defaultConcurrency,
       processEvery,

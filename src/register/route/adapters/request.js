@@ -13,7 +13,8 @@ export default ({ request, }) => {
     baseUrl: request.baseUrl,
     files: request.files,
     file: request.file,
-    body: request.body
+    body: request.body,
+    native: request
   }
 }
 

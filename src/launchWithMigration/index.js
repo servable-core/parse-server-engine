@@ -18,7 +18,9 @@ export default async (props) => {
       state = 1
     },
     afterMigration: async () => {
+      // await applyCLPs({ classes: definitions })
       state = 2
+
     },
     definitions
   }
@@ -30,6 +32,7 @@ export default async (props) => {
     parse: {
       ...config.parse,
       schema: migrationSchema,
+      schemas: definitions,
       liveQuery: {
         ...(config.liveQuery ? config.liveQuery : {}),
         classNames: liveClasses,
@@ -44,4 +47,19 @@ export default async (props) => {
 
   Servable.schema = schema
   return { config, server }
+}
+
+
+const applyCLPs = async ({ classes }) => {
+  try {
+    for (const _class of classes) {
+      const { className, classLevelPermissions } = _class
+
+      const schema = new Parse.Schema(className)
+      await schema.setCLP(classLevelPermissions).update()
+      console.log(`CLPs updated for class: ${className}`);
+    }
+  } catch (e) {
+    console.error(e)
+  }
 }
