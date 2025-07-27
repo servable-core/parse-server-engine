@@ -32,7 +32,6 @@ export default async (props) => {
     parse: {
       ...config.parse,
       schema: migrationSchema,
-      schemas: definitions,
       liveQuery: {
         ...(config.liveQuery ? config.liveQuery : {}),
         classNames: liveClasses,
