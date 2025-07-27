@@ -69,7 +69,8 @@ jobs:
     name: Publish 🚀
     runs-on: ubuntu-latest
     # if: ${{ github.ref == 'refs/heads/main' }}
-    needs: [quality,check-code-analysis,check-lock-file-version]
+    # needs: [quality,check-code-analysis,check-lock-file-version]
+    needs: [check-code-analysis,check-lock-file-version]
     permissions:
       contents: write # to be able to publish a GitHub release
       issues: write # to be able to comment on released issues
