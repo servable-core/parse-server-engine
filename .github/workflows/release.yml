@@ -92,8 +92,8 @@ jobs:
 
     - name: Print Yarn version
       run: yarn -v
-    - name: Setup yarn
-      uses: mskelton/setup-yarn@v1
+    # - name: Setup yarn
+    #   uses: mskelton/setup-yarn@v1
     - name: Install dependencies
       run: yarn --frozen-lockfile
     - name: Verify the integrity of provenance attestations and registry signatures for installed dependencies
