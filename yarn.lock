@@ -10445,7 +10445,7 @@ minio@^2.0.0:
     xml "^1.0.0"
     xml2js "^0.4.15"
 
-minio@^8.0.1:
+minio@^8.0.5:
   version "8.0.5"
   resolved "https://registry.yarnpkg.com/minio/-/minio-8.0.5.tgz#bfc4d07734ba956efe90bdbcf53b97f56a2c10f2"
   integrity sha512-/vAze1uyrK2R/DSkVutE4cjVoAowvIQ18RAwn7HrqnLecLlMazFnY0oNBqfuoAWvu7mZIGX75AzpuV05TJeoHg==
