@@ -85,6 +85,14 @@ jobs:
       uses: actions/setup-node@v3
       with:
         node-version: 22
+        check-latest: true
+        cache: 'yarn'
+
+    - name: Print Node.js version
+      run: node -v
+
+    - name: Print Yarn version
+      run: yarn -v
     - name: Setup yarn
       uses: mskelton/setup-yarn@v1
     - name: Install dependencies
