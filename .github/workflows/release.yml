@@ -1,5 +1,3 @@
-# https://github.com/parse-community/parse-server/blob/alpha/.github/workflows/ci.yml
-
 name: Release
 
 on:
@@ -25,6 +23,10 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v3
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22.x'
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v3
       with:
@@ -40,48 +42,34 @@ jobs:
     needs: [check-code-analysis]
     steps:
       - uses: actions/checkout@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
       - name: Check JS Lockfile
         uses: ChromaticHQ/javascript-lockfile-check-action@v1.1.0
         with:
           package-manager: yarn
-          # working-directory: web/themes/custom/my-custom-theme
-
-  # quality:
-  #   name: Quality 🐳
-  #   runs-on: ${{ matrix.os }}
-  #   needs: [check-code-analysis,check-lock-file-version]
-  #   strategy:
-  #     matrix:
-  #       # node-version: [10.x, 12.x, 14.x, 15.x]
-  #       node-version: [22.x]
-  #       # os: [ubuntu-latest, windows-latest]
-  #       os: [ubuntu-latest]
-  #       # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
-  #   steps:
-  #   - name: Checkout
-  #     uses: actions/checkout@v3
-  #   - uses: mskelton/setup-yarn@v1
-  #   - name: Install dependencies
-  #     run: yarn --frozen-lockfile
-  #   # - run: yarn test
 
   publish:
     name: Publish 🚀
     runs-on: ubuntu-latest
-    # if: ${{ github.ref == 'refs/heads/main' }}
-    # needs: [quality,check-code-analysis,check-lock-file-version]
-    needs: [check-code-analysis,check-lock-file-version]
+    needs: [check-code-analysis, check-lock-file-version]
     permissions:
-      contents: write # to be able to publish a GitHub release
-      issues: write # to be able to comment on released issues
-      pull-requests: write # to be able to comment on released pull requests
-      id-token: write # to enable use of OIDC for npm provenance
+      contents: write
+      issues: write
+      pull-requests: write
+      id-token: write
     steps:
     - name: Checkout
       uses: actions/checkout@v3
       with:
         fetch-depth: 0
-    - name: Setup yarn
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22.x'
+    - name: Setup Yarn
       uses: mskelton/setup-yarn@v1
     - name: Install dependencies
       run: yarn --frozen-lockfile
