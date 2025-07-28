@@ -7,7 +7,9 @@ const __dirname = dirname(__filename)
 
 export default async ({ config, serverCloseComplete, app }) => {
   const { parse: parseConfig } = config
-  console.log('[PARSE_SERVER_ADAPTER]', '[DEBUG]', 'dolaunch>', config,)
+  console.log('[PARSE_SERVER_ADAPTER]', '[DEBUG]', 'dolaunch>',
+    // config,
+  )
   const schema = {
 
     ...(parseConfig.schema ? parseConfig.schema : {}),
