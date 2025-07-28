@@ -61,6 +61,7 @@ jobs:
       pull-requests: write
       id-token: write
     steps:
+    - run: yarn cache clean
     - name: Checkout
       uses: actions/checkout@v3
       with:
