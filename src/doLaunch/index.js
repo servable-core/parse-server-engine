@@ -74,9 +74,10 @@ export default async ({ config, serverCloseComplete, app }) => {
     // EmailAdapter,
     // filesAdapter,
     // cacheAdapter,
+    enableInsecureAuthAdapters: false,
     security: {
       enableCheck: true,
-      enableCheckLog: true
+      enableCheckLog: false
     },
     // Push,
     // https://github.com/parse-community/docs/tree/938474c05796a8ee2f157010090870935c72fab8/_includes/defined-schema
