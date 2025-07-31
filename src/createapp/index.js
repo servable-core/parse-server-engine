@@ -4,6 +4,7 @@ import compression from 'compression'
 // import bodyParser from 'body-parser'
 import qs from 'qs'
 
+
 export default async ({ servableConfig }) => {
   const app = express()
   app.use(compression())
@@ -17,9 +18,34 @@ export default async ({ servableConfig }) => {
     extended: true,
     parameterLimit: 1000000
   }))
-  // app.use(bodyParser.urlencoded({ extended: true }));
+
+  const numberRegex = /^-?\d+(\.\d+)?$/
+
   app.set('query parser',
-    (str) => qs.parse(str, { allowDots: true }));
+    (str) => qs.parse(
+      str,
+      {
+        allowDots: true,
+        decoder: (str, defaultDecoder, charset, type) => {
+          // const val = defaultDecoder(str, defaultDecoder, charset, type);
+          // if (/^\d+$/.test(val)) {
+          //   return Number(val);
+          // }
+          // return val;
+          const val = defaultDecoder(str, defaultDecoder, charset, type);
+
+          // Only convert if it looks like a number
+          if (typeof val === 'string' && numberRegex.test(val)) {
+            const num = Number(val);
+            // Ensure not NaN
+            if (!Number.isNaN(num)) {
+              return num;
+            }
+          }
+
+          return val;
+        }
+      }))
 
   return app
 }
