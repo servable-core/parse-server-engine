@@ -1,4 +1,4 @@
-import { ParseServer } from "parse-server"
+// import { ParseServer } from "parse-server"
 
 export default async ({ httpServer, }) => {
   // if (!servableConfig.liveQuery || !servableConfig.liveQuery.enabled) {
@@ -6,7 +6,7 @@ export default async ({ httpServer, }) => {
   // }
   // try {
   console.log("[PARSE_SERVER_ADAPTER]", `Launch > Live query > Start`)
-  ParseServer.createLiveQueryServer(httpServer)
+  // ParseServer.createLiveQueryServer(httpServer)
   console.log("[PARSE_SERVER_ADAPTER]", `Launch > Live query > Success`)
   // } catch (e) {
   //   console.log("[PARSE_SERVER_ADAPTER]", `Launch > Live query 🚀 > Error`)

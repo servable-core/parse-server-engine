@@ -97,7 +97,8 @@
     "query-string-parse": "^1.1.1",
     "sharp": "0.30.7",
     "underscore": "^1.13.3",
-    "winston": "^3.7.2"
+    "winston": "^3.7.2",
+    "qs": "^6.14.0"
   },
   "devDependencies": {
     "@size-limit/preset-small-lib": "^4.10.2",

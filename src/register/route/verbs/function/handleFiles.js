@@ -1,12 +1,10 @@
-
-// import bodyParser from 'body-parser'
+import bodyParser from 'body-parser'
 import multer from 'multer'
 import requestAdapter from '../../adapters/request.js'
 import processFunction from './processFunction.js'
-
-// import sanitizeFilename from 'sanitize-filename'
 import sanitizePath from 'path-sanitizer'
-
+import adaptLimits from './lib/adaptlimits.js'
+import uriFromStorage from './lib/urifromstorage.js'
 
 export default async ({
   url,
@@ -93,9 +91,9 @@ export default async ({
       rateLimiting: options.rateLimiting
     }),
     upload.array('files'),
-    // bodyParser.raw({
-    //   type: _request.type ? _request.type : 'application/json'
-    // }),
+    bodyParser.raw({
+      type: (options.request && options.request.type) ? options.request.type : 'application/json'
+    }),
     async (req, response, next) => {
       const request = requestAdapter({ request: req })
       const files = []
@@ -164,57 +162,3 @@ export default async ({
       })
     })
 }
-
-
-const adaptLimits = (limits) => {
-  const d = {}
-  if (limits.fieldNameSize !== undefined) {
-    d.fieldNameSize = limits.fieldNameSize
-  }
-  if (limits.size !== undefined) {
-    d.fieldSize = limits.size
-  }
-  if (limits.fields !== undefined) {
-    d.fields = limits.fields
-  }
-  if (limits.fileSize !== undefined) {
-    d.fileSize = limits.fileSize
-  }
-  if (limits.files !== undefined) {
-    d.files = limits.files
-  }
-  if (limits.parts !== undefined) {
-    d.parts = limits.parts
-  }
-  if (limits.headerPairs !== undefined) {
-    d.headerPairs = limits.headerPairs
-  }
-  return d
-}
-
-const uriFromStorage = ({ storage, file, name }) => {
-  const {
-    type,
-    params
-  } = storage
-  let uri
-  switch (type) {
-    case 'minio': {
-      uri = `https://${params.endPoint}/${params.bucketName}/${name ? name : file.originalname}`
-      break
-    }
-    default: {
-      break
-    }
-  }
-
-  return uri
-}
-// https://expressjs.com/en/resources/middleware/multer.html
-// fieldNameSize	Max field name size	100 bytes
-// fieldSize	Max field value size (in bytes)	1MB
-// fields	Max number of non-file fields	Infinity
-// fileSize	For multipart forms, the max file size (in bytes)	Infinity
-// files	For multipart forms, the max number of file fields	Infinity
-// parts	For multipart forms, the max number of parts (fields + files)	Infinity
-// headerPairs	For multipart forms, the max number of header key=>value pairs to parse	2000

@@ -1,42 +1,13 @@
 import express from "express"
-// import Fastify from 'fastify'
-// import fastifyExpress from '@fastify/express'
 import cors from 'cors'
 import compression from 'compression'
-//TODO:
-// import parseServerImageResizeByurl from './middlewares/imageSize/index.js'
-//import imageHostMiddleware from './middlewares/imageHost/index.js'
+// import bodyParser from 'body-parser'
+import qs from 'qs'
 
 export default async ({ servableConfig }) => {
   const app = express()
-
-  // const whitelist = [
-  //   'localhost',
-  //   'abounak.local',
-  //   'servable.app'
-  // ]
-
-  // const corsOptions = {
-  //   origin: function (origin, callback) {
-  //     if (whitelist.indexOf(origin) !== -1) {
-  //       callback(null, true)
-  //     } else {
-  //       callback(new Error('Not allowed by CORS'))
-  //     }
-  //   },
-  // }
-
   app.use(compression())
   app.use(cors())
-  // app.use(cors(corsOptions))
-  //app.options('*', cors()) // include before other routes
-
-  //TODO:
-  // app.use(parseServerImageResizeByurl())
-  //app.use(imageHostMiddleware())
-
-  //https://reactgo.com/request-entity-too-large-node/
-  //File limit should be repercuted in express too:
   app.use(express.json({
     limit: servableConfig.envs['engineMaxUploadSize'],
   }))
@@ -46,14 +17,9 @@ export default async ({ servableConfig }) => {
     extended: true,
     parameterLimit: 1000000
   }))
-
+  // app.use(bodyParser.urlencoded({ extended: true }));
+  app.set('query parser',
+    (str) => qs.parse(str, { allowDots: true }));
 
   return app
 }
-
-
-
-
-
-// const app = Fastify()
-// await app.register(fastifyExpress)
