@@ -23,11 +23,13 @@ export default ({ servableConfig }) => {
       specification,
       prefix,
       schema,
+      parser,
       handler,
       logLevel,
       preHandler,
       request: _request = {}
     } = options
+
 
     const urls = paths ? paths : (path ? [path] : (url ? [url] : []))
     return Promise.all(urls.map(async _path => {
@@ -52,8 +54,10 @@ export default ({ servableConfig }) => {
             })
         } break
         case 'post': {
+          const parserType = parser ? parser.type : null
           let __url = prefix ? `${prefix}/${_path}` : _path
           __url = `/${sanitizePath(__url)}`.toLowerCase()
+
           Servable.AppNative.post(
             __url,
             _rateLimiter({

@@ -9,9 +9,9 @@ export default async ({ servableConfig }) => {
   const app = express()
   app.use(compression())
   app.use(cors())
-  app.use(express.json({
-    limit: servableConfig.envs['engineMaxUploadSize'],
-  }))
+  // app.use(express.json({
+  //   limit: servableConfig.envs['engineMaxUploadSize'],
+  // }))
 
   app.use(express.urlencoded({
     limit: servableConfig.envs['engineMaxUploadSize'],
