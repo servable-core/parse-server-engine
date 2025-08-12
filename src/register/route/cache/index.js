@@ -5,8 +5,8 @@ export default ({ cache = {} }) => {
   const { type, params } = cache
   switch (type) {
     case 'inMemory': {
-      const { duration = 10 } = params
-      return memory({ duration })
+      const { window = 10 } = params
+      return memory({ duration: window })
     }
     default: {
       return empty

@@ -46,7 +46,7 @@ export default ({ servableConfig }) => {
             async (request, response, next) => {
               await processHttp({
                 servableArguments,
-                handler,
+                options,
                 request,
                 response,
                 next
@@ -69,7 +69,7 @@ export default ({ servableConfig }) => {
             async (request, response, next) => {
               await processHttp({
                 servableArguments,
-                handler,
+                options,
                 request,
                 response,
                 next
@@ -90,7 +90,7 @@ export default ({ servableConfig }) => {
             async (request, response, next) => {
               await processHttp({
                 servableArguments,
-                handler,
+                options,
                 request,
                 response,
                 next
@@ -112,7 +112,7 @@ export default ({ servableConfig }) => {
             async (request, response, next) => {
               await processHttp({
                 servableArguments,
-                handler,
+                options,
                 request,
                 response,
                 next
@@ -133,7 +133,7 @@ export default ({ servableConfig }) => {
             async (request, response, next) => {
               await processHttp({
                 servableArguments,
-                handler,
+                options,
                 request,
                 response,
                 next
@@ -154,7 +154,7 @@ export default ({ servableConfig }) => {
             async (request, response, next) => {
               await processHttp({
                 servableArguments,
-                handler,
+                options,
                 request,
                 response,
                 next
