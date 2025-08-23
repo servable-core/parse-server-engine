@@ -53,11 +53,47 @@ export default ({ servableConfig }) => {
               })
             })
         } break
-        case 'post': {
-          const parserType = parser ? parser.type : null
+        case 'head': {
           let __url = prefix ? `${prefix}/${_path}` : _path
           __url = `/${sanitizePath(__url)}`.toLowerCase()
-
+          Servable.AppNative.head(
+            __url,
+            _cache({ cache: options.cache }),
+            _rateLimiter({
+              rateLimiting: options.rateLimiting
+            }),
+            async (request, response, next) => {
+              await processHttp({
+                servableArguments,
+                options,
+                request,
+                response,
+                next
+              })
+            })
+        } break
+        case 'connect': {
+          let __url = prefix ? `${prefix}/${_path}` : _path
+          __url = `/${sanitizePath(__url)}`.toLowerCase()
+          Servable.AppNative.head(
+            __url,
+            _cache({ cache: options.cache }),
+            _rateLimiter({
+              rateLimiting: options.rateLimiting
+            }),
+            async (request, response, next) => {
+              await processHttp({
+                servableArguments,
+                options,
+                request,
+                response,
+                next
+              })
+            })
+        } break
+        case 'post': {
+          let __url = prefix ? `${prefix}/${_path}` : _path
+          __url = `/${sanitizePath(__url)}`.toLowerCase()
           Servable.AppNative.post(
             __url,
             _rateLimiter({
@@ -97,11 +133,10 @@ export default ({ servableConfig }) => {
               })
             })
         } break
-
-        case 'update': {
+        case 'patch': {
           let __url = prefix ? `${prefix}/${_path}` : _path
           __url = `/${sanitizePath(__url)}`.toLowerCase()
-          Servable.AppNative.update(
+          Servable.AppNative.patch(
             __url,
             _rateLimiter({
               rateLimiting: options.rateLimiting
@@ -150,6 +185,25 @@ export default ({ servableConfig }) => {
             }),
             bodyParser.raw({
               type: _request.type ? _request.type : 'application/json'
+            }),
+            async (request, response, next) => {
+              await processHttp({
+                servableArguments,
+                options,
+                request,
+                response,
+                next
+              })
+            })
+        } break
+        case 'trace': {
+          let __url = prefix ? `${prefix}/${_path}` : _path
+          __url = `/${sanitizePath(__url)}`.toLowerCase()
+          Servable.AppNative.trace(
+            __url,
+            _cache({ cache: options.cache }),
+            _rateLimiter({
+              rateLimiting: options.rateLimiting
             }),
             async (request, response, next) => {
               await processHttp({
