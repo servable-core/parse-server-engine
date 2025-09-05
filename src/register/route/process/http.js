@@ -28,7 +28,11 @@ export default async ({
         : {}
 
     const { userResolver } = _servableArguments
-    const user = await userResolver({ request })
+    let user
+    if (userResolver) {
+      user = await userResolver({ request })
+    }
+
     if (requireUser && !user) {
       throw { code: 209, message: "invalid session token" }
     }
