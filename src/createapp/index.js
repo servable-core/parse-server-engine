@@ -43,6 +43,14 @@ export default async ({ servableConfig }) => {
             }
           }
 
+          if (typeof val === 'string' && (val === 'false')) {
+            return false
+          }
+
+          if (typeof val === 'string' && (val === 'true')) {
+            return true
+          }
+
           return val;
         }
       }))

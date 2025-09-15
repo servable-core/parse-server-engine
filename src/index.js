@@ -11,7 +11,6 @@ import adaptAppNative from './register/index.native.js'
 import formatAppClassesSchemas from './formatAppClassesSchemas/index.js'
 import system from './system/index.js'
 
-
 export default {
   createApp,
   createHttpServer,
