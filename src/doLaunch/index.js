@@ -19,13 +19,13 @@ export default async ({ config, serverCloseComplete, app }) => {
     lockSchemas: true,
     // If true, Parse Server will delete non defined Classes from
     // the database. (Core classes like Role, User are never deleted)
-    strict: true,
+    strict: false,
     // If true, a field type change, the changed field is deleted
     // from the database (all data in this field will be deleted)
     // and then create the field with the new type
     recreateModifiedFields: false,
     // If true, Parse will delete non defined fields on a class. (Core fields are never deleted)
-    deleteExtraFields: true,
+    deleteExtraFields: false,
 
     // LockSchemas: JSON.parse(process.env.SERVABLE_SCHEMA_LOCK_SCHEMAS) ? true : false,
     // strict: JSON.parse(process.env.SERVABLE_SCHEMA_STRICT) ? true : false,
