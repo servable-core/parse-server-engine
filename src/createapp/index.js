@@ -1,17 +1,45 @@
-import express from "express"
-import cors from 'cors'
-import compression from 'compression'
+import express from "express";
+import cors from 'cors';
+import compression from 'compression';
 // import bodyParser from 'body-parser'
-import qs from 'qs'
+import qs from 'qs';
+import cookieParser from "cookie-parser";
 
 
 export default async ({ servableConfig }) => {
+
   const app = express()
   app.use(compression())
-  app.use(cors())
+  // app.use(cors(corsOptions))
   // app.use(express.json({
   //   limit: servableConfig.envs['engineMaxUploadSize'],
   // }))
+
+  app.use(cookieParser());       // ✅ parses cookies into req.cookies
+
+  const corsOptions = servableConfig.configuration?.config?.cors || {}
+  const { allowedOrigins } = corsOptions
+
+  if (allowedOrigins?.length) {
+    app.use(cors({
+      origin: (origin, callback) => {
+        // Allow requests with no origin (like mobile apps or curl)
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.includes(origin)) {
+          callback(null, true);
+        } else {
+          callback(new Error("Not allowed by CORS"));
+        }
+      },
+      credentials: true,            // 👈 important for cookies
+      optionsSuccessStatus: 200,    // legacy browser support
+    }))
+  }
+  else {
+    app.use(cors())
+  }
+
+
 
   app.use(express.urlencoded({
     limit: servableConfig.envs['engineMaxUploadSize'],
