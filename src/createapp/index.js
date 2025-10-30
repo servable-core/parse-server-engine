@@ -19,11 +19,11 @@ export default async ({ servableConfig }) => {
 
   const corsOptions = servableConfig.configuration?.config?.cors || {}
   const { allowedOrigins } = corsOptions
-  console.log('[ENGINE] allowedOrigins', allowedOrigins)
+  console.log('[ENGINE] corsOptions', corsOptions)
   if (allowedOrigins?.length) {
     app.use(cors({
       origin: (origin, callback) => {
-        console.log('[ENGINE] checking origin', origin, 'in', allowedOrigins)
+        // console.log('[ENGINE] checking origin', origin, 'in', allowedOrigins)
         // Allow requests with no origin (like mobile apps or curl)
         if (!origin) return callback(null, true);
         if (allowedOrigins.includes(origin)) {
