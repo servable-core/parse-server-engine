@@ -36,7 +36,7 @@ export default ({ servableConfig }) => {
       switch (method.toLowerCase()) {
         case 'get': {
           let __url = prefix ? `${prefix}/${_path}` : _path
-          __url = `/${sanitizePath(__url)}`.toLowerCase()
+          __url = `/${sanitizePath.default(__url)}`.toLowerCase()
           Servable.AppNative.get(
             __url,
             _cache({ cache: options.cache }),
@@ -55,7 +55,7 @@ export default ({ servableConfig }) => {
         } break
         case 'head': {
           let __url = prefix ? `${prefix}/${_path}` : _path
-          __url = `/${sanitizePath(__url)}`.toLowerCase()
+          __url = `/${sanitizePath.default(__url)}`.toLowerCase()
           Servable.AppNative.head(
             __url,
             _cache({ cache: options.cache }),
@@ -74,7 +74,7 @@ export default ({ servableConfig }) => {
         } break
         case 'connect': {
           let __url = prefix ? `${prefix}/${_path}` : _path
-          __url = `/${sanitizePath(__url)}`.toLowerCase()
+          __url = `/${sanitizePath.default(__url)}`.toLowerCase()
           Servable.AppNative.head(
             __url,
             _cache({ cache: options.cache }),
@@ -93,7 +93,7 @@ export default ({ servableConfig }) => {
         } break
         case 'post': {
           let __url = prefix ? `${prefix}/${_path}` : _path
-          __url = `/${sanitizePath(__url)}`.toLowerCase()
+          __url = `/${sanitizePath.default(__url)}`.toLowerCase()
           Servable.AppNative.post(
             __url,
             _rateLimiter({
@@ -114,7 +114,7 @@ export default ({ servableConfig }) => {
         } break
         case 'put': {
           let __url = prefix ? `${prefix}/${_path}` : _path
-          __url = `/${sanitizePath(__url)}`.toLowerCase()
+          __url = `/${sanitizePath.default(__url)}`.toLowerCase()
           Servable.AppNative.put(
             __url,
             _rateLimiter({
@@ -135,7 +135,7 @@ export default ({ servableConfig }) => {
         } break
         case 'patch': {
           let __url = prefix ? `${prefix}/${_path}` : _path
-          __url = `/${sanitizePath(__url)}`.toLowerCase()
+          __url = `/${sanitizePath.default(__url)}`.toLowerCase()
           Servable.AppNative.patch(
             __url,
             _rateLimiter({
@@ -156,7 +156,7 @@ export default ({ servableConfig }) => {
         } break
         case 'delete': {
           let __url = prefix ? `${prefix}/${_path}` : _path
-          __url = `/${sanitizePath(__url)}`.toLowerCase()
+          __url = `/${sanitizePath.default(__url)}`.toLowerCase()
           Servable.AppNative.delete(
             __url,
             _rateLimiter({
@@ -177,7 +177,7 @@ export default ({ servableConfig }) => {
         } break
         case 'options': {
           let __url = prefix ? `${prefix}/${_path}` : _path
-          __url = `/${sanitizePath(__url)}`.toLowerCase()
+          __url = `/${sanitizePath.default(__url)}`.toLowerCase()
           Servable.AppNative.options(
             __url,
             _rateLimiter({
@@ -198,7 +198,7 @@ export default ({ servableConfig }) => {
         } break
         case 'trace': {
           let __url = prefix ? `${prefix}/${_path}` : _path
-          __url = `/${sanitizePath(__url)}`.toLowerCase()
+          __url = `/${sanitizePath.default(__url)}`.toLowerCase()
           Servable.AppNative.trace(
             __url,
             _cache({ cache: options.cache }),
@@ -219,7 +219,7 @@ export default ({ servableConfig }) => {
         case 'function': {
           let __url = `/function/${_path}`
           __url = prefix ? `${prefix}/${__url}` : __url
-          __url = `/${sanitizePath(__url)}`.toLowerCase()
+          __url = `/${sanitizePath.default(__url)}`.toLowerCase()
           await handleFunction({
             url: __url,
             options,

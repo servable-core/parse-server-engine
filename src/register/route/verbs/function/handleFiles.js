@@ -31,7 +31,7 @@ export default async ({
     if (options.files.nameAdapter) {
       res = await options.files.nameAdapter({ file, request })
     }
-    res = sanitizePath(res)
+    res = sanitizePath.default(res)
     return res
   }
 

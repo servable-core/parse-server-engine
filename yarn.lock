@@ -11799,10 +11799,10 @@ path-parse@^1.0.7:
   resolved "https://registry.yarnpkg.com/path-parse/-/path-parse-1.0.7.tgz#fbc114b60ca42b30d9daf5858e4bd68bbedb6735"
   integrity sha512-LDJzPVEEEPR+y48z93A0Ed0yXb8pAByGWo/k5YYdYgpY2/2EsOsksJrq7lOHxryrVOn1ejG6oAp8ahvOIQD8sw==
 
-path-sanitizer@^2.0.0:
-  version "2.0.0"
-  resolved "https://registry.yarnpkg.com/path-sanitizer/-/path-sanitizer-2.0.0.tgz#b5068d38cfb0b17c2e8b8451b7ed1bae320267f7"
-  integrity sha512-LvVN3i5Ln64IwxR0SEmLxYP2RhrjWDc00F0lrYo5bAAkMlDafERh0TS03AxO+RPDDnzvuO8v2YpgXi9EshrTYQ==
+path-sanitizer@^3.1.0:
+  version "3.1.0"
+  resolved "https://registry.yarnpkg.com/path-sanitizer/-/path-sanitizer-3.1.0.tgz#0b878e08cb13929ef36066cddfadad170e9c167a"
+  integrity sha512-JNW7p4VYl7tm9sLep/z/YANU/z/YsWArrcfCIZPScLoKymk8guxXEDcE9C77Lt9t7EKz8FtHHx0CO7rQpw34Xg==
 
 path-scurry@^1.11.1:
   version "1.11.1"
