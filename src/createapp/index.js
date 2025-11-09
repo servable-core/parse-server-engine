@@ -17,28 +17,49 @@ export default async ({ servableConfig }) => {
 
   app.use(cookieParser());       // ✅ parses cookies into req.cookies
 
-  const corsOptions = servableConfig.configuration?.config?.cors || {}
-  const { allowedOrigins } = corsOptions
-  console.log('[ENGINE] corsOptions', corsOptions)
+  const corsOptions = servableConfig.configuration?.config?.cors || {};
+  const { allowedOrigins } = corsOptions;
+  console.log('[ENGINE] corsOptions', corsOptions);
+
   if (allowedOrigins?.length) {
     app.use(cors({
       origin: (origin, callback) => {
-        // console.log('[ENGINE] checking origin', origin, 'in', allowedOrigins)
-        // Allow requests with no origin (like mobile apps or curl)
-        if (!origin) return callback(null, true);
-        if (allowedOrigins.includes(origin)) {
-          callback(null, true);
-        } else {
-          callback(new Error("Not allowed by CORS"));
+        // Allow requests with no origin (like curl, Postman, mobile apps)
+        if (!origin) {
+          return callback(null, true);
+        }
+
+        try {
+          const hostname = new URL(origin).hostname;
+
+          // 1️⃣ Exact match check
+          if (allowedOrigins.includes(origin)) {
+            return callback(null, true);
+          }
+
+          // 2️⃣ Subdomain match for any of the allowed domains
+          for (const allowedOrigin of allowedOrigins) {
+            // Escape dots for regex and allow subdomains
+            const regex = new RegExp(`(^|\\.)${allowedOrigin.replace(/\./g, '\\.')}$`);
+            if (regex.test(hostname)) {
+              return callback(null, true);
+            }
+          }
+
+          // 3️⃣ Otherwise, reject
+          return callback(new Error("Not allowed by CORS"));
+        } catch (err) {
+          console.error('[ENGINE] Invalid origin:', origin, err);
+          return callback(new Error("Invalid origin"));
         }
       },
-      credentials: true,            // 👈 important for cookies
+      credentials: true,            // important for cookies/auth headers
       optionsSuccessStatus: 200,    // legacy browser support
-    }))
+    }));
+  } else {
+    app.use(cors()); // fallback: open CORS
   }
-  else {
-    app.use(cors())
-  }
+
 
 
 
