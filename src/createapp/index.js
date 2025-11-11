@@ -1,10 +1,9 @@
 import express from "express";
-import cors from 'cors';
 import compression from 'compression';
 // import bodyParser from 'body-parser'
 import qs from 'qs';
 import cookieParser from "cookie-parser";
-
+import cors from 'cors';
 
 export default async ({ servableConfig }) => {
 
@@ -19,45 +18,48 @@ export default async ({ servableConfig }) => {
 
   const corsOptions = servableConfig.configuration?.config?.cors || {};
   const { allowedOrigins } = corsOptions;
-  console.log('[ENGINE] corsOptions', corsOptions);
+  console.log("[ENGINE] corsOptions", corsOptions);
 
   if (allowedOrigins?.length) {
     app.use(cors({
       origin: (origin, callback) => {
-        // Allow requests with no origin (like curl, Postman, mobile apps)
-        if (!origin) {
-          return callback(null, true);
-        }
+        if (!origin) return callback(null, true); // allow non-browser tools
 
         try {
           const hostname = new URL(origin).hostname;
 
-          // 1️⃣ Exact match check
-          if (allowedOrigins.includes(origin)) {
-            return callback(null, true);
-          }
-
-          // 2️⃣ Subdomain match for any of the allowed domains
           for (const allowedOrigin of allowedOrigins) {
-            // Escape dots for regex and allow subdomains
-            const regex = new RegExp(`(^|\\.)${allowedOrigin.replace(/\./g, '\\.')}$`);
-            if (regex.test(hostname)) {
+            // Normalize input (strip protocol, port, whitespace)
+            const allowedHost = allowedOrigin
+              .replace(/^https?:\/\//, "")
+              .replace(/:\d+$/, "")
+              .trim();
+
+            // 1️⃣ Direct apex match (fast path)
+            if (hostname === allowedHost) {
+              // console.log(`[CORS] ✅ Allowed apex: ${hostname}`);
+              return callback(null, true);
+            }
+
+            // 2️⃣ Subdomain check (regex only when needed)
+            if (hostname.endsWith(`.${allowedHost}`)) {
+              // console.log(`[CORS] ✅ Allowed subdomain: ${hostname}`);
               return callback(null, true);
             }
           }
 
-          // 3️⃣ Otherwise, reject
+          console.warn(`[CORS] ❌ Blocked: ${origin}`);
           return callback(new Error("Not allowed by CORS"));
         } catch (err) {
-          console.error('[ENGINE] Invalid origin:', origin, err);
+          console.error("[ENGINE] Invalid origin:", origin, err);
           return callback(new Error("Invalid origin"));
         }
       },
-      credentials: true,            // important for cookies/auth headers
-      optionsSuccessStatus: 200,    // legacy browser support
+      credentials: true,
+      optionsSuccessStatus: 200,
     }));
   } else {
-    app.use(cors()); // fallback: open CORS
+    app.use(cors());
   }
 
 
