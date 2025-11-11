@@ -23,32 +23,34 @@ export default async ({ servableConfig }) => {
   if (allowedOrigins?.length) {
     app.use(cors({
       origin: (origin, callback) => {
-        if (!origin) return callback(null, true); // allow non-browser tools
+        if (!origin) return callback(null, true); // allow curl/Postman
 
         try {
-          const hostname = new URL(origin).hostname;
+          const hostname = new URL(origin).hostname.toLowerCase();
 
-          for (const allowedOrigin of allowedOrigins) {
-            // Normalize input (strip protocol, port, whitespace)
-            const allowedHost = allowedOrigin
+          for (let allowedOrigin of allowedOrigins) {
+            // Clean up env inputs (remove protocol, ports, slashes, spaces)
+            allowedOrigin = allowedOrigin
+              .toLowerCase()
               .replace(/^https?:\/\//, "")
               .replace(/:\d+$/, "")
+              .replace(/\/$/, "")
               .trim();
 
-            // 1️⃣ Direct apex match (fast path)
-            if (hostname === allowedHost) {
-              // console.log(`[CORS] ✅ Allowed apex: ${hostname}`);
+            // ✅ Fast path: exact apex match
+            if (hostname === allowedOrigin) {
+              // console.log(`[CORS] Allowed apex: ${hostname}`);
               return callback(null, true);
             }
 
-            // 2️⃣ Subdomain check (regex only when needed)
-            if (hostname.endsWith(`.${allowedHost}`)) {
-              // console.log(`[CORS] ✅ Allowed subdomain: ${hostname}`);
+            // ✅ Subdomain match
+            if (hostname.endsWith(`.${allowedOrigin}`)) {
+              // console.log(`[CORS] Allowed subdomain: ${hostname}`);
               return callback(null, true);
             }
           }
 
-          console.warn(`[CORS] ❌ Blocked: ${origin}`);
+          console.warn(`[CORS] ❌ Blocked origin: ${origin}`);
           return callback(new Error("Not allowed by CORS"));
         } catch (err) {
           console.error("[ENGINE] Invalid origin:", origin, err);
