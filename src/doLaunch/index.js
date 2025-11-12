@@ -70,7 +70,9 @@ export default async ({ config, serverCloseComplete, app }) => {
     verbose: (parseConfig.verbose && parseConfig.verbose !== undefined) ? parseConfig.verbose : 'warn', //#TODO: transmit verbose from envs properly
     allowClientClassCreation: false,
     cloud: _path.resolve(__dirname, "./main.cjs"),
-    masterKeyIps: [], // allow all IPs,
+    masterKeyIps: process.env.MASTER_KEY_IPS
+      ? process.env.MASTER_KEY_IPS.split(',')
+      : undefined,
     enableInsecureAuthAdapters: false,
     security: {
       enableCheck: true,
