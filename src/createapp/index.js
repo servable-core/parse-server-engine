@@ -23,11 +23,12 @@ export default async ({ servableConfig }) => {
   if (allowedOrigins?.length) {
     app.use(cors({
       origin: (origin, callback) => {
+        console.log('--cors', origin)
         if (!origin) return callback(null, true); // allow curl/Postman
 
         try {
           const hostname = new URL(origin).hostname.toLowerCase();
-
+          console.log('--cors: hostname', hostname)
           for (let allowedOrigin of allowedOrigins) {
             // Clean up env inputs (remove protocol, ports, slashes, spaces)
             allowedOrigin = allowedOrigin
@@ -36,6 +37,8 @@ export default async ({ servableConfig }) => {
               .replace(/:\d+$/, "")
               .replace(/\/$/, "")
               .trim();
+
+            console.log('--cors: allowedOrigin', allowedOrigin)
 
             // ✅ Fast path: exact apex match
             if (hostname === allowedOrigin) {
@@ -46,10 +49,11 @@ export default async ({ servableConfig }) => {
             // ✅ Subdomain match
             if (hostname.endsWith(`.${allowedOrigin}`)) {
               // console.log(`[CORS] Allowed subdomain: ${hostname}`);
+              console.log('--cors: matches')
               return callback(null, true);
             }
           }
-
+          console.log('--cors: no match', origin)
           console.warn(`[CORS] ❌ Blocked origin: ${origin}`);
           return callback(new Error("Not allowed by CORS"));
         } catch (err) {
