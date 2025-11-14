@@ -19,6 +19,7 @@ export default ({
     config: {
       ...(configuration.config ? configuration.config : {}),
       parse: {
+        ...(configuration.config?.parse ? configuration.config.parse : {}),
         verbose: parseInt(servableConfig.envs.verbose),
 
         appId: servableConfig.envs.appID,

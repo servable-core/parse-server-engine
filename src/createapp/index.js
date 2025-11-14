@@ -6,10 +6,9 @@ import cookieParser from "cookie-parser";
 import cors from 'cors';
 
 export default async ({ servableConfig }) => {
-
   const app = express()
   app.use(compression())
-  // app.use(cors(corsOptions))
+
   // app.use(express.json({
   //   limit: servableConfig.envs['engineMaxUploadSize'],
   // }))
@@ -35,7 +34,7 @@ export default async ({ servableConfig }) => {
               .replace(/^https?:\/\//, "")
               .replace(/:\d+$/, "")
               .replace(/\/$/, "")
-              .trim();
+              .trim()
 
             // ✅ Fast path: exact apex match
             if (hostname === allowedOrigin) {
@@ -46,7 +45,7 @@ export default async ({ servableConfig }) => {
             // ✅ Subdomain match
             if (hostname.endsWith(`.${allowedOrigin}`)) {
               // console.log(`[CORS] Allowed subdomain: ${hostname}`);
-              return callback(null, true);
+              return callback(null, true)
             }
           }
 
@@ -63,9 +62,6 @@ export default async ({ servableConfig }) => {
   } else {
     app.use(cors());
   }
-
-
-
 
   app.use(express.urlencoded({
     limit: servableConfig.envs['engineMaxUploadSize'],
