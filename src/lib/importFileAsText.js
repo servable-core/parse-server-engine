@@ -9,7 +9,7 @@ export default async _url => {
     const fileUrl = new URL(_url, import.meta.url)
     return fs.promises.readFile(fileUrl, 'utf8')
   } catch (e) {
-    console.log("[Servable]", `importFileAsText → `, e)
+    console.log("[@servable/parse-server-engine/lib/importFileAsText] default() → Failed to import file as text:", _url, "Error:", e.message || e)
     return null
   }
 }
