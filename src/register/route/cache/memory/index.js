@@ -2,6 +2,47 @@ import mcache from 'memory-cache'
 
 const CACHE_ENTRY_KEY = '__servable_cache_entry__'
 
+const STRIPPED_QUERY_KEYS = new Set([
+  'traceid',
+  'trace_id',
+  'tracespan',
+  'trace_span',
+  'traceparent',
+  'tracestate',
+  'spanid',
+  'span_id',
+  'parentspanid',
+  'parent_span_id',
+  'requestid',
+  'request_id',
+  'correlationid',
+  'correlation_id'
+])
+
+const normalizeRequestUrl = (rawUrl) => {
+  const safeRawUrl = String(rawUrl || '')
+
+  try {
+    const parsed = new URL(safeRawUrl, 'http://localhost')
+    const keys = Array.from(new Set(Array.from(parsed.searchParams.keys())))
+
+    keys.forEach((key) => {
+      if (STRIPPED_QUERY_KEYS.has(String(key).toLowerCase())) {
+        parsed.searchParams.delete(key)
+      }
+    })
+
+    parsed.searchParams.sort()
+    const normalizedQuery = parsed.searchParams.toString()
+
+    return normalizedQuery
+      ? `${parsed.pathname}?${normalizedQuery}`
+      : parsed.pathname
+  } catch {
+    return safeRawUrl
+  }
+}
+
 export default ({ duration, extent }) => {
   return (req, res, next) => {
     const resetCache = req.headers['x-servable-reset-cache']
@@ -10,7 +51,8 @@ export default ({ duration, extent }) => {
       return
     }
 
-    let key = '__express__' + (req.originalUrl || req.url)
+    const normalizedUrl = normalizeRequestUrl(req.originalUrl || req.url)
+    let key = '__express__' + normalizedUrl
     if (extent === 'user') {
       const sessionToken = req.headers['x-servable-session-token']
       if (!sessionToken) {
