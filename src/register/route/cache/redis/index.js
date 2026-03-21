@@ -118,14 +118,14 @@ export default ({ duration, template, redisUrl = process.env.APP_REDIS_URI }) =>
       const cachedValue = await client.get(key)
       if (cachedValue !== null) {
         try {
-          console.log('[@servable/parse-server-engine/cache/redis] Cache hit for key:', key)
+          //console.log('[@servable/parse-server-engine/cache/redis] Cache hit for key:', key)
           const cachedEntry = JSON.parse(cachedValue)
           if (cachedEntry && cachedEntry[CACHE_ENTRY_KEY]) {
-            console.log('[@servable/parse-server-engine/cache/redis] Cache entry valid for key:', key)
+            //console.log('[@servable/parse-server-engine/cache/redis] Cache entry valid for key:', key)
             res.send(cachedEntry.body)
             return
           }
-          console.log('[@servable/parse-server-engine/cache/redis] Cache entry invalid for key:', key)
+          //console.log('[@servable/parse-server-engine/cache/redis] Cache entry invalid for key:', key)
           res.send(cachedEntry)
           return
         } catch (error) {
@@ -148,7 +148,7 @@ export default ({ duration, template, redisUrl = process.env.APP_REDIS_URI }) =>
           [CACHE_ENTRY_KEY]: true,
           body
         })
-        console.log('[@servable/parse-server-engine/cache/redis] Caching response for key:', key, 'with TTL (ms):', ttlMs)
+        //console.log('[@servable/parse-server-engine/cache/redis] Caching response for key:', key, 'with TTL (ms):', ttlMs)
       } catch (error) {
         console.error('[@servable/parse-server-engine/cache/redis] Failed to serialize cache payload', error)
         res.sendResponse(body)
@@ -156,14 +156,14 @@ export default ({ duration, template, redisUrl = process.env.APP_REDIS_URI }) =>
       }
 
       if (ttlMs > 0) {
-        console.log('[@servable/parse-server-engine/cache/redis] Setting cache with expiration for key:', key)
+        //console.log('[@servable/parse-server-engine/cache/redis] Setting cache with expiration for key:', key)
         client.set(key, payload, {
           PX: ttlMs
         }).catch((error) => {
           console.error('[@servable/parse-server-engine/cache/redis] Failed to write cache', error)
         })
       } else {
-        console.log('[@servable/parse-server-engine/cache/redis] Setting cache without expiration for key:', key)
+        //console.log('[@servable/parse-server-engine/cache/redis] Setting cache without expiration for key:', key)
         client.set(key, payload).catch((error) => {
           console.error('[@servable/parse-server-engine/cache/redis] Failed to write cache', error)
         })
