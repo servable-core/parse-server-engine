@@ -1,5 +1,7 @@
 import mcache from 'memory-cache'
 
+const CACHE_ENTRY_KEY = '__servable_cache_entry__'
+
 export default ({ duration, extent }) => {
   return (req, res, next) => {
     const resetCache = req.headers['x-servable-reset-cache']
@@ -8,7 +10,7 @@ export default ({ duration, extent }) => {
       return
     }
 
-    let key = '__express__' + req.originalUrl || req.url
+    let key = '__express__' + (req.originalUrl || req.url)
     if (extent === 'user') {
       const sessionToken = req.headers['x-servable-session-token']
       if (!sessionToken) {
@@ -18,14 +20,24 @@ export default ({ duration, extent }) => {
       key += sessionToken
     }
 
-    let cachedBody = mcache.get(key)
-    if (cachedBody) {
-      res.send(cachedBody)
+    let cachedEntry = mcache.get(key)
+    if (cachedEntry && cachedEntry[CACHE_ENTRY_KEY]) {
+      res.send(cachedEntry.body)
+      return
+    }
+    if (cachedEntry !== null && cachedEntry !== undefined) {
+      // Backward compatibility for entries stored before envelope format.
+      res.send(cachedEntry)
       return
     } else {
       res.sendResponse = res.send
       res.send = (body) => {
-        mcache.put(key, body, duration)
+        const ttl = Number(duration)
+        const ttlMs = Number.isFinite(ttl) && ttl >= 0 ? ttl : undefined
+        mcache.put(key, {
+          [CACHE_ENTRY_KEY]: true,
+          body
+        }, ttlMs)
         res.sendResponse(body)
       }
       next()
