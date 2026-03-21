@@ -13,7 +13,7 @@ export default ({ payload }) => {
   // Const redisOptions = { url: process.env.SERVABLE_REDIS_URL, db: process.env.SERVABLE_REDIS_DB }
   const redisOptions = { url: normalizedRedisCacheUri }
   const engine = new ParseServer.RedisCacheAdapter(redisOptions)
-  console.log("[@servable/parse-server-engine/setConfigurations/adapt.js] createCacheAdapter() → Redis cache adapter created with options:", redisOptions)
+  console.log("[@servable/parse-server-engine/setConfigurations/adapt.js] createCacheAdapter() → Redis cache adapter created")
 
   return engine
 }
