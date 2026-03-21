@@ -89,7 +89,7 @@ const getRedisClient = async ({ redisUrl }) => {
   return redisClientPromise
 }
 
-export default ({ duration, extent, redisUrl = process.env.APP_REDIS_URI }) => {
+export default ({ duration, template, redisUrl = process.env.APP_REDIS_URI }) => {
   return async (req, res, next) => {
     const resetCache = req.headers['x-servable-reset-cache']
     if (resetCache) {
@@ -105,7 +105,7 @@ export default ({ duration, extent, redisUrl = process.env.APP_REDIS_URI }) => {
 
     const normalizedUrl = normalizeRequestUrl(req.originalUrl || req.url)
     let key = '__express__' + normalizedUrl
-    if (extent === 'user') {
+    if (String(template || '').trim().toLowerCase() === 'userexists') {
       const sessionToken = req.headers['x-servable-session-token']
       if (!sessionToken) {
         next()

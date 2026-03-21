@@ -43,7 +43,7 @@ const normalizeRequestUrl = (rawUrl) => {
   }
 }
 
-export default ({ duration, extent }) => {
+export default ({ duration, template }) => {
   return (req, res, next) => {
     const resetCache = req.headers['x-servable-reset-cache']
     if (resetCache) {
@@ -53,7 +53,7 @@ export default ({ duration, extent }) => {
 
     const normalizedUrl = normalizeRequestUrl(req.originalUrl || req.url)
     let key = '__express__' + normalizedUrl
-    if (extent === 'user') {
+    if (String(template || '').trim().toLowerCase() === 'userexists') {
       const sessionToken = req.headers['x-servable-session-token']
       if (!sessionToken) {
         next()
