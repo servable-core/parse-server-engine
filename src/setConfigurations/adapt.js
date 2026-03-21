@@ -1,4 +1,4 @@
-// import createCacheAdapter from './adapters/cache.js'
+import createCacheAdapter from './adapters/cache.js'
 
 export default ({
   servableConfig,
@@ -36,7 +36,9 @@ export default ({
         // filesAdapter,
         // cacheAdapter,
         // push,
-
+        cacheAdapter: configuration.config.parse.cacheAdapter
+          ? configuration.config.parse.cacheAdapter
+          : createCacheAdapter({ payload: servableConfig.envs }),
         verifyUserEmails: false,
         // EmailVerifyTokenValidityDuration: process.env.EMAIL_VERIFY_TOKEN_VALIDITY_DURATION_IS_SET ? process.env.EMAIL_VERIFY_TOKEN_VALIDITY_DURATION_HOURS * 60 * 60 : undefined, // in seconds (2 hours = 7200 seconds)
         // preventLoginWithUnverifiedEmail: process.env.SERVABLE_PREVENT_LOGIN_WITH_UNVERIFIED_EMAIL,
