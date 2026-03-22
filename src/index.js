@@ -22,5 +22,8 @@ export default {
   adaptApp,
   adaptAppNative,
   formatAppClassesSchemas,
-  system
+  system,
+  test: () => {
+    console.log("Hello from engine test function!")
+  }
 }
