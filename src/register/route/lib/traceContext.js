@@ -57,16 +57,11 @@ const getTraceContextFromHeaders = (headers = {}) => {
   const parsedTraceparent = parseTraceparent(traceparent)
   const parsedBaggage = parseBaggage(baggage)
 
-  const legacyTraceId =
-    getHeaderValue(headers, 'x-trace-id') || getHeaderValue(headers, 'trace_id')
-  const legacySpanId =
-    getHeaderValue(headers, 'x-span-id') || getHeaderValue(headers, 'span_id')
-
   return {
     traceparent,
     baggage,
-    trace_id: parsedTraceparent.trace_id || parsedBaggage.trace_id || legacyTraceId,
-    span_id: parsedTraceparent.span_id || parsedBaggage.span_id || legacySpanId,
+    trace_id: parsedTraceparent.trace_id || parsedBaggage.trace_id,
+    span_id: parsedTraceparent.span_id || parsedBaggage.span_id,
   }
 }
 
