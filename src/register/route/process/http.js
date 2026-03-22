@@ -1,4 +1,5 @@
 import requestAdapter from '../adapters/request.js'
+import { buildParamsWithTraceContext } from '../lib/traceContext.js'
 
 export default async ({
   servableArguments,
@@ -37,11 +38,16 @@ export default async ({
       throw { code: 209, message: "invalid session token" }
     }
 
+    const params = buildParamsWithTraceContext({
+      query: _request.query,
+      headers: _request.headers,
+    })
+
     const result = await handler({
       user,
       request: _request,
       response,
-      params: _request.query,
+      params,
       next,
       native,
       ..._servableArguments,
