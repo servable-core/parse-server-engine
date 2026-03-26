@@ -1,4 +1,5 @@
 import mcache from 'memory-cache'
+import getSessionTokenFromRequest from '../lib/getSessionTokenFromRequest.js'
 
 const CACHE_ENTRY_KEY = '__servable_cache_entry__'
 
@@ -54,7 +55,7 @@ export default ({ duration, template }) => {
     const normalizedUrl = normalizeRequestUrl(req.originalUrl || req.url)
     let key = '__express__' + normalizedUrl
     if (String(template || '').trim().toLowerCase() === 'userexists') {
-      const sessionToken = req.headers['x-servable-session-token']
+      const sessionToken = getSessionTokenFromRequest(req)
       if (!sessionToken) {
         next()
         return

@@ -1,6 +1,7 @@
 import memory from "./memory/index.js"
 import redis from "./redis/index.js"
 import empty from "../empty.js"
+import getSessionTokenFromRequest from "./lib/getSessionTokenFromRequest.js"
 
 const adaptStorage = (storage = '') => {
   const normalized = String(storage || '').trim().toLowerCase()
@@ -69,7 +70,7 @@ const buildMiddleware = ({ configuration }) => {
 }
 
 const isUserExists = (req) => {
-  const sessionToken = req.headers?.['x-servable-session-token']
+  const sessionToken = getSessionTokenFromRequest(req)
   return Boolean(sessionToken)
 }
 

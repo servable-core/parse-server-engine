@@ -1,4 +1,5 @@
 import { createClient } from 'redis'
+import getSessionTokenFromRequest from '../lib/getSessionTokenFromRequest.js'
 
 const CACHE_ENTRY_KEY = '__servable_cache_entry__'
 let redisClient
@@ -106,12 +107,12 @@ export default ({ duration, template, redisUrl = process.env.APP_REDIS_URI }) =>
     const normalizedUrl = normalizeRequestUrl(req.originalUrl || req.url)
     let key = '__express__' + normalizedUrl
     if (String(template || '').trim().toLowerCase() === 'userexists') {
-      const sessionToken = req.headers['x-servable-session-token']
+      const sessionToken = getSessionTokenFromRequest(req)
       if (!sessionToken) {
         next()
         return
       }
-      key += sessionToken
+      key += `_${sessionToken}`
     }
 
     try {
