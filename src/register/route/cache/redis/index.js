@@ -142,6 +142,12 @@ export default ({ duration, template, redisUrl = process.env.APP_REDIS_URI }) =>
     res.send = (body) => {
       const ttl = Number(duration)
       const ttlMs = Number.isFinite(ttl) && ttl >= 0 ? ttl : undefined
+
+      if (!(ttlMs > 0)) {
+        res.sendResponse(body)
+        return
+      }
+
       let payload
       try {
         payload = JSON.stringify({
@@ -155,19 +161,12 @@ export default ({ duration, template, redisUrl = process.env.APP_REDIS_URI }) =>
         return
       }
 
-      if (ttlMs > 0) {
-        //console.log('[@servable/parse-server-engine/cache/redis] Setting cache with expiration for key:', key)
-        client.set(key, payload, {
-          PX: ttlMs
-        }).catch((error) => {
-          console.error('[@servable/parse-server-engine/cache/redis] Failed to write cache', error)
-        })
-      } else {
-        //console.log('[@servable/parse-server-engine/cache/redis] Setting cache without expiration for key:', key)
-        client.set(key, payload).catch((error) => {
-          console.error('[@servable/parse-server-engine/cache/redis] Failed to write cache', error)
-        })
-      }
+      //console.log('[@servable/parse-server-engine/cache/redis] Setting cache with expiration for key:', key)
+      client.set(key, payload, {
+        PX: ttlMs
+      }).catch((error) => {
+        console.error('[@servable/parse-server-engine/cache/redis] Failed to write cache', error)
+      })
 
       res.sendResponse(body)
     }
