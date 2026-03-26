@@ -2,7 +2,7 @@ import ParseServer from "parse-server"
 
 export default ({ payload }) => {
   if (!payload.redisCacheUri) {
-    console.warn("[@servable/parse-server-engine/setConfigurations/adapt.js] createCacheAdapter() → No redisCacheUri provided in payload. Cache adapter will not be used.")
+    // console.warn("[@servable/parse-server-engine/setConfigurations/adapt.js] createCacheAdapter() → No redisCacheUri provided in payload. Cache adapter will not be used.")
     return null
   }
 
