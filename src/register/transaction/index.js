@@ -14,6 +14,17 @@
 // v1 scope (see the taxonomy doc): one write kind per transaction. Queuing
 // both a save and a destroy on the same transaction throws immediately,
 // rather than silently running them as two separate non-atomic operations.
+//
+// Standalone-MongoDB fallback: if the real batch commit fails, isConfirmedStandaloneMongo()
+// checks the actual topology (not the error - see that file for why the error
+// alone can't be trusted to mean "not a replica set", it's sanitized to a
+// generic "Internal server error" by the time it reaches here). Only when
+// standalone is *confirmed* does commit() fall back to sending each queued
+// write individually (the old, non-atomic behavior) instead of failing -
+// any other commit failure (a real validation/permission/data error) is
+// rethrown unchanged, never masked as "just no replica set".
+import isConfirmedStandaloneMongo from './detectReplicaSet.js'
+
 const TX_MARKER = '__servableTransactionMarker'
 
 class ParseEngineTransaction {
@@ -100,19 +111,20 @@ class ParseEngineTransaction {
 
   async commit() {
     this._assertOpen()
+    let fellBackToSequential = false
 
     try {
       const { save, destroy } = this._pending
       if (save.length) {
-        await Parse.Object.saveAll(save, {
-          ...this._options,
-          transaction: true
+        fellBackToSequential = await this._commitBatch({
+          kind: 'save',
+          objects: save
         })
         this._writes = save.length
       } else if (destroy.length) {
-        await Parse.Object.destroyAll(destroy, {
-          ...this._options,
-          transaction: true
+        fellBackToSequential = await this._commitBatch({
+          kind: 'destroy',
+          objects: destroy
         })
         this._writes = destroy.length
       } else {
@@ -124,6 +136,7 @@ class ParseEngineTransaction {
     }
 
     this._state = 'committed'
+    this._mode = fellBackToSequential ? 'sequential-fallback' : this._mode
     this._pending = { save: [], destroy: [] }
 
     return {
@@ -131,6 +144,41 @@ class ParseEngineTransaction {
       writes: this._writes,
       state: this._state,
       mode: this._mode
+    }
+  }
+
+  // Returns true if it fell back to a sequential (non-atomic) commit.
+  async _commitBatch({ kind, objects }) {
+    const batchMethod =
+      kind === 'save' ? Parse.Object.saveAll : Parse.Object.destroyAll
+
+    try {
+      await batchMethod(objects, {
+        ...this._options,
+        transaction: true
+      })
+      return false
+    } catch (error) {
+      if (!(await isConfirmedStandaloneMongo())) {
+        throw error
+      }
+
+      console.warn(
+        `[Servable Transaction] MongoDB is standalone, not a replica set, so this batch of ${objects.length} ${kind}(s) (token ${this._token}) can't commit atomically. Falling back to sending each ${kind} individually (non-atomic) instead of failing. Fix: migrate MongoDB to a replica set.`
+      )
+      await this._commitSequentially({ kind, objects })
+      return true
+    }
+  }
+
+  async _commitSequentially({ kind, objects }) {
+    const perObjectMethod =
+      kind === 'save'
+        ? (object) => object.save(null, { ...this._options })
+        : (object) => object.destroy({ ...this._options })
+
+    for (const object of objects) {
+      await perObjectMethod(object)
     }
   }
 

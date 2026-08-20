@@ -10730,7 +10730,7 @@ mongodb@6.17.0:
     bson "^6.10.4"
     mongodb-connection-string-url "^3.0.0"
 
-mongodb@^4, mongodb@^4.11.0:
+mongodb@^4, mongodb@^4.11.0, mongodb@^4.13.0:
   version "4.17.2"
   resolved "https://registry.yarnpkg.com/mongodb/-/mongodb-4.17.2.tgz#237c0534e36a3449bd74c6bf6d32f87a1ca7200c"
   integrity sha512-mLV7SEiov2LHleRJPMPrK2PMyhXFZt2UQLC4VD4pnth3jMjYKHhtqfwwkkvS/NXuo/Fp3vbhaNcXrIDaLRb9Tg==

@@ -1,6 +1,5 @@
 import 'parse-server'
 import { jest } from '@jest/globals'
-import createTransaction from '../../src/register/transaction/index.js'
 
 // Replace the network-calling originals before the patch captures them, so
 // "original" always means these mocks, never a real HTTP call.
@@ -14,6 +13,20 @@ Parse.Object.prototype.destroy = originalDestroy
 Parse.Object.saveAll = originalSaveAll
 Parse.Object.destroyAll = originalDestroyAll
 
+// detectReplicaSet.js does a real MongoDB connection - controlled explicitly
+// here instead of relying on ENGINE_DATABASE_URI being unset in the test env.
+const isConfirmedStandaloneMongo = jest.fn().mockResolvedValue(false)
+jest.unstable_mockModule(
+  '../../src/register/transaction/detectReplicaSet.js',
+  () => ({
+    __esModule: true,
+    default: (...args) => isConfirmedStandaloneMongo(...args)
+  })
+)
+
+const { default: createTransaction } = await import(
+  '../../src/register/transaction/index.js'
+)
 const Transaction = createTransaction({ Parse })
 
 describe('App.Transaction', () => {
@@ -22,6 +35,8 @@ describe('App.Transaction', () => {
     originalDestroy.mockClear()
     originalSaveAll.mockClear()
     originalDestroyAll.mockClear()
+    isConfirmedStandaloneMongo.mockClear()
+    isConfirmedStandaloneMongo.mockResolvedValue(false)
   })
 
   test('a plain save() with no transaction option passes straight through', async () => {
@@ -150,7 +165,8 @@ describe('App.Transaction', () => {
     )
   })
 
-  test('a failed commit marks the transaction failed, not open', async () => {
+  test('a failed commit is rethrown unchanged when standalone MongoDB is not confirmed', async () => {
+    isConfirmedStandaloneMongo.mockResolvedValue(false)
     originalSaveAll.mockRejectedValueOnce(new Error('write conflict'))
     const tx = new Transaction()
     const obj = new Parse.Object('TestObject')
@@ -158,5 +174,67 @@ describe('App.Transaction', () => {
 
     await expect(tx.commit()).rejects.toThrow('write conflict')
     expect(tx.state).toBe('failed')
+  })
+
+  test('commit() falls back to sequential writes when standalone MongoDB is confirmed', async () => {
+    isConfirmedStandaloneMongo.mockResolvedValue(true)
+    originalSaveAll.mockRejectedValueOnce(new Error('Internal server error.'))
+    const consoleWarnSpy = jest
+      .spyOn(console, 'warn')
+      .mockImplementation(() => {})
+
+    const tx = new Transaction({ useMasterKey: true })
+    const objA = new Parse.Object('TestObject')
+    const objB = new Parse.Object('TestObject')
+    await objA.save({ name: 'a' }, { transaction: tx })
+    await objB.save({ name: 'b' }, { transaction: tx })
+
+    const outcome = await tx.commit()
+
+    expect(originalSaveAll).toHaveBeenCalledTimes(1)
+    expect(originalSave).toHaveBeenCalledTimes(2)
+    expect(originalSave).toHaveBeenNthCalledWith(1, null, {
+      useMasterKey: true
+    })
+    expect(originalSave).toHaveBeenNthCalledWith(2, null, {
+      useMasterKey: true
+    })
+    expect(outcome).toEqual({
+      token: tx.token,
+      writes: 2,
+      state: 'committed',
+      mode: 'sequential-fallback'
+    })
+    expect(consoleWarnSpy).toHaveBeenCalledTimes(1)
+    expect(consoleWarnSpy.mock.calls[0][0]).toMatch(
+      /standalone, not a replica set/
+    )
+
+    consoleWarnSpy.mockRestore()
+  })
+
+  test('commit() falls back to sequential destroys when standalone MongoDB is confirmed', async () => {
+    isConfirmedStandaloneMongo.mockResolvedValue(true)
+    originalDestroyAll.mockRejectedValueOnce(
+      new Error('Internal server error.')
+    )
+    const consoleWarnSpy = jest
+      .spyOn(console, 'warn')
+      .mockImplementation(() => {})
+
+    const tx = new Transaction()
+    const objA = new Parse.Object('TestObject')
+    const objB = new Parse.Object('TestObject')
+    await objA.destroy({ transaction: tx })
+    await objB.destroy({ transaction: tx })
+
+    const outcome = await tx.commit()
+
+    expect(originalDestroyAll).toHaveBeenCalledTimes(1)
+    expect(originalDestroy).toHaveBeenCalledTimes(2)
+    expect(outcome.mode).toBe('sequential-fallback')
+    expect(outcome.writes).toBe(2)
+
+    consoleWarnSpy.mockRestore()
   })
 })
