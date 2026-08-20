@@ -17,12 +17,18 @@
 //
 // Standalone-MongoDB fallback: if the real batch commit fails, isConfirmedStandaloneMongo()
 // checks the actual topology (not the error - see that file for why the error
-// alone can't be trusted to mean "not a replica set", it's sanitized to a
-// generic "Internal server error" by the time it reaches here). Only when
-// standalone is *confirmed* does commit() fall back to sending each queued
-// write individually (the old, non-atomic behavior) instead of failing -
-// any other commit failure (a real validation/permission/data error) is
-// rethrown unchanged, never masked as "just no replica set".
+// alone can't be trusted to mean "not a replica set": the same underlying
+// standalone-Mongo failure has been observed to reach callers both as a
+// generic { code: 1, message: "Internal server error." } (parse-server
+// reporting a per-item error inside an otherwise-200 /batch response) and as
+// a Parse SDK-mangled { code: 111, message: undefined } (Parse.Object.saveAll
+// rewrites ANY /batch request failure to ParseError.INCORRECT_TYPE client-side,
+// see parse/lib/node/ParseObject.js - it discards the real code entirely).
+// Neither shape is a reliable signal on its own). Only when standalone is
+// *confirmed* does commit() fall back to sending each queued write
+// individually (the old, non-atomic behavior) instead of failing - any other
+// commit failure (a real validation/permission/data error) is rethrown
+// unchanged, never masked as "just no replica set".
 import isConfirmedStandaloneMongo from './detectReplicaSet.js'
 
 const TX_MARKER = '__servableTransactionMarker'
@@ -159,7 +165,8 @@ class ParseEngineTransaction {
       })
       return false
     } catch (error) {
-      if (!(await isConfirmedStandaloneMongo())) {
+      const servableConfig = this.constructor._servableConfig
+      if (!(await isConfirmedStandaloneMongo({ servableConfig }))) {
         throw error
       }
 
@@ -288,8 +295,10 @@ const patchParseWrites = ({ Parse }) => {
   Parse[TX_MARKER + 'Patched'] = true
 }
 
-export default ({ Parse }) => {
+export default ({ Parse, servableConfig }) => {
   patchParseWrites({ Parse })
 
-  return class extends ParseEngineTransaction {}
+  return class extends ParseEngineTransaction {
+    static _servableConfig = servableConfig
+  }
 }

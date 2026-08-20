@@ -8,7 +8,7 @@ import Query from './query/index.js'
 ParseServer.S3Adapter
 
 export default async ({ servableConfig }) => {
-  const Transaction = createTransaction({ Parse })
+  const Transaction = createTransaction({ Parse, servableConfig })
 
   return ({
     ..._parse,

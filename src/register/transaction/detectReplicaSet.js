@@ -21,14 +21,24 @@ import { MongoClient } from 'mongodb'
 // Cached for the process lifetime - MongoDB topology doesn't change without
 // a restart, and this avoids paying a connection round-trip on every
 // transaction once the answer is known.
+// The resolved databaseURI isn't always the literal ENGINE_DATABASE_URI env
+// var - servable's own local-dev bootstrapping (system/index.js's
+// adaptAppPayload) constructs it dynamically from the docker-compose mongo
+// service when that env var isn't set, and only ever writes the result to
+// servableConfig.envs.databaseURI (mutated in place as launch proceeds, so
+// reading it lazily here - not at Transaction-construction time - sees the
+// fully-resolved value once launchSystem has run). Prefer that over the raw
+// env var; fall back to the env var for callers that don't thread
+// servableConfig through (e.g. these unit tests).
 let cachedIsConfirmedStandalone = null
 
-export default async () => {
+export default async ({ servableConfig } = {}) => {
   if (cachedIsConfirmedStandalone !== null) {
     return cachedIsConfirmedStandalone
   }
 
-  const uri = process.env.ENGINE_DATABASE_URI
+  const uri =
+    servableConfig?.envs?.databaseURI || process.env.ENGINE_DATABASE_URI
   if (!uri) {
     return false
   }
