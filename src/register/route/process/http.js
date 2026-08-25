@@ -61,7 +61,15 @@ export default async ({
   } catch (e) {
     const a = {
       message: e.message ? e.message : "An error occurred",
-      code: e.code ? e.code : 520,
+      // Was 520 - a real HTTP status a route handler should never send deliberately, but
+      // Cloudflare (and most CDNs/proxies) treat 520 as their OWN synthetic "unknown error from
+      // origin" code. A handler that throws without a .code produces a perfectly well-formed
+      // response using this fallback, but at the client it reads as a CDN/infra failure instead
+      // of an application error - confirmed live, this cost real debugging time chasing a
+      // Cloudflare-side explanation for what was actually this fallback firing on a bare
+      // `throw new Error(...)`. 500 carries the same "no more specific code was given" meaning
+      // without colliding with a CDN's own status-code space.
+      code: e.code ? e.code : 500,
       messageId: e.messageId,
     }
     // next(a)

@@ -55,7 +55,9 @@ export default async ({
   } catch (e) {
     const a = {
       message: e.message ? e.message : "An error occurred",
-      code: e.code ? e.code : 520,
+      // See process/http.js's identical fallback for why 500 replaces the old 520 - it collided
+      // with Cloudflare's own synthetic "unknown error from origin" status.
+      code: e.code ? e.code : 500,
       messageId: e.messageId,
     }
     // next(a)
