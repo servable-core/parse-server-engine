@@ -6,7 +6,8 @@ export default async ({
   extra = {},
   options: {
     handler,
-    requireUser = false //#TODO: add requireUserKeys https://docs.parseplatform.org/cloudcode/guide/#cloud-functions
+    requireUser = false, //#TODO: add requireUserKeys https://docs.parseplatform.org/cloudcode/guide/#cloud-functions
+    requireStepUp = false
   },
   request,
   response,
@@ -30,6 +31,14 @@ export default async ({
     const user = await userResolver({ request })
     if (requireUser && !user) {
       throw { code: 209, message: "invalid session token" }
+    }
+
+    // See process/http.js's identical check for why this is 449, not 209.
+    if (requireStepUp && user) {
+      const stepUpFresh = await Servable.App.User.checkStepUpFreshness({ user })
+      if (!stepUpFresh) {
+        throw { code: 449, message: "Step-up authentication required" }
+      }
     }
 
     const params = buildParamsWithTraceContext({

@@ -6,7 +6,8 @@ export default async ({
   extra = {},
   options: {
     handler,
-    requireUser = false //#TODO: add requireUserKeys https://docs.parseplatform.org/cloudcode/guide/#cloud-functions
+    requireUser = false, //#TODO: add requireUserKeys https://docs.parseplatform.org/cloudcode/guide/#cloud-functions
+    requireStepUp = false
   },
   request,
   response,
@@ -36,6 +37,18 @@ export default async ({
 
     if (requireUser && !user) {
       throw { code: 209, message: "invalid session token" }
+    }
+
+    // Independent from requireUser above, and checked after it - a route can't require step-up
+    // from a request that isn't even authenticated. 449 ("Retry With") is distinct from 209 on
+    // purpose: 209 means "log in again," 449 means "you're logged in, but prove it again for
+    // this specific action" - a client needs to react very differently to each (redirect to
+    // login vs. a lightweight password re-prompt that then retries the same request).
+    if (requireStepUp && user) {
+      const stepUpFresh = await Servable.App.User.checkStepUpFreshness({ user })
+      if (!stepUpFresh) {
+        throw { code: 449, message: "Step-up authentication required" }
+      }
     }
 
     const params = buildParamsWithTraceContext({
