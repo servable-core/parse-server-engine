@@ -76,6 +76,18 @@ export default async ({ config, serverCloseComplete, app }) => {
       enableCheck: true,
       enableCheckLog: false
     },
+    // MongoDB connection pool options for idle connection handling
+    mongoOptions: parseConfig.mongoOptions || {
+      socketKeepaliveEnabled: true,
+      socketKeepaliveInactivityMS: 30000,
+      maxPoolSize: 50,
+      minPoolSize: 5,
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
+      waitQueueTimeoutMS: 10000,
+      retryWrites: true,
+      retryReads: true,
+    },
     schema
   }
 
