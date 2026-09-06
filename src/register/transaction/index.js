@@ -31,6 +31,77 @@
 // unchanged, never masked as "just no replica set".
 import isConfirmedStandaloneMongo from './detectReplicaSet.js'
 
+// Parse pushes a new pending-ops layer onto every object in a batch when that batch
+// starts, and balances it when the response is handled - popPendingState on success,
+// mergeFirstPendingState on a per-item error. But when the /batch HTTP request itself
+// rejects (rather than returning 200 with per-item errors), Parse rejects `batchReturned`
+// and every object's task is a `.then(onFulfilled)` with NO rejection handler - so
+// neither runs, and the pushed layer is never balanced. See parse/lib/node/ParseObject.js
+// (_deepSave's batch path).
+//
+// A leaked layer silently destroys every later write to that instance: `save()` sends
+// pendingOps[0] - now an empty layer - while anything newly set sits in a later layer that
+// is never reached. The save RESOLVES, reports success, writes nothing, and the keys stay
+// dirty forever, because each subsequent save shifts one layer and pushes another so the
+// depth never recovers. Confirmed live against a standalone Mongo: after one failed
+// transactional batch, two fields set on that instance were still dirty after a successful
+// save() and absent from the database.
+//
+// Depth is measured before the batch and restored after a failure rather than
+// unconditionally merging once, because the two failure modes differ: a 200-with-per-item-
+// errors response DOES balance itself (Parse calls _handleSaveError), and merging again
+// would collapse a layer that is legitimately in use. Comparing depths handles both.
+const stateControllerOr = (fallback) => {
+  try {
+    return Parse.CoreManager.getObjectStateController() || fallback
+  } catch (e) {
+    return fallback
+  }
+}
+
+const pendingDepths = (objects) => {
+  const stateController = stateControllerOr(null)
+  if (!stateController || typeof stateController.getPendingOps !== 'function') {
+    return null
+  }
+  try {
+    return objects.map(object => stateController.getPendingOps(object._getStateIdentifier()).length)
+  } catch (e) {
+    return null
+  }
+}
+
+const restorePendingDepths = (objects, depths) => {
+  if (!depths) {
+    return
+  }
+  const stateController = stateControllerOr(null)
+  if (!stateController || typeof stateController.mergeFirstPendingState !== 'function') {
+    return
+  }
+
+  objects.forEach((object, index) => {
+    try {
+      const identifier = object._getStateIdentifier()
+      // mergeFirstPendingState shifts the oldest layer and merges it into the next one, so
+      // it lowers the depth by one WITHOUT discarding operations - the queued writes stay
+      // intact for the sequential fallback (or for the caller, if the error is rethrown).
+      let depth = stateController.getPendingOps(identifier).length
+      while (depth > depths[index]) {
+        stateController.mergeFirstPendingState(identifier)
+        const next = stateController.getPendingOps(identifier).length
+        if (next >= depth) {
+          break
+        }
+        depth = next
+      }
+    } catch (e) {
+      console.error('[Servable Transaction] could not restore pending-ops depth', e.message)
+    }
+  })
+}
+
+
 const TX_MARKER = '__servableTransactionMarker'
 
 class ParseEngineTransaction {
@@ -155,8 +226,26 @@ class ParseEngineTransaction {
 
   // Returns true if it fell back to a sequential (non-atomic) commit.
   async _commitBatch({ kind, objects }) {
+    const servableConfig = this.constructor._servableConfig
+
+    // Already known to be standalone: don't send a batch that cannot possibly commit.
+    // Besides the wasted round trip, a failed transactional batch leaks a pending-ops
+    // layer onto every object in it (see restorePendingDepths), so the cheapest fix for
+    // the common case is not to make the doomed request at all. The topology check is
+    // cached per process, so only the very first commit in a process pays for the failure
+    // path below.
+    if (await isConfirmedStandaloneMongo({ servableConfig })) {
+      console.warn(
+        `[Servable Transaction] MongoDB is standalone, not a replica set, so this batch of ${objects.length} ${kind}(s) (token ${this._token}) can't commit atomically. Sending each ${kind} individually (non-atomic) instead. Fix: migrate MongoDB to a replica set.`
+      )
+      await this._commitSequentially({ kind, objects })
+      return true
+    }
+
     const batchMethod =
       kind === 'save' ? Parse.Object.saveAll : Parse.Object.destroyAll
+
+    const depths = pendingDepths(objects)
 
     try {
       await batchMethod(objects, {
@@ -165,7 +254,11 @@ class ParseEngineTransaction {
       })
       return false
     } catch (error) {
-      const servableConfig = this.constructor._servableConfig
+      // Before anything else, and whether or not this turns out to be the standalone
+      // case: a failed batch can leave objects with an unbalanced pending-ops stack, and
+      // leaving that in place silently voids every future write to those instances.
+      restorePendingDepths(objects, depths)
+
       if (!(await isConfirmedStandaloneMongo({ servableConfig }))) {
         throw error
       }
