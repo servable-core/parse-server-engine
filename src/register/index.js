@@ -4,6 +4,7 @@ import route from './route/index.js'
 import jobs from './jobs/index.js'
 import createTransaction from './transaction/index.js'
 import Query from './query/index.js'
+import createObject from './object/index.js'
 
 ParseServer.S3Adapter
 
@@ -12,7 +13,7 @@ export default async ({ servableConfig }) => {
 
   return ({
     ..._parse,
-    Object: Parse.Object,
+    Object: createObject({ Parse }),
     Query,
     Cloud: Parse.Cloud,
     User: Parse.User,
