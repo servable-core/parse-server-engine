@@ -104,6 +104,25 @@ const restorePendingDepths = (objects, depths) => {
 
 const TX_MARKER = '__servableTransactionMarker'
 
+// Mirrors parse/lib/node/arrayContainsObject.js - reference identity, OR the same class
+// and the same id. Deliberately the same rule Parse.Object.saveAll() applies (via its own
+// unique() call) when it builds a batch: the whole point of the sequential fallback is to
+// behave like the atomic path it stands in for, so it has to collapse exactly the same
+// duplicates. _getId() falls back to a per-instance localId for unsaved objects, so two
+// distinct new objects never collide here.
+const alreadyQueued = (queued, object) => {
+  if (queued.indexOf(object) > -1) {
+    return true
+  }
+  return queued.some(
+    candidate =>
+      candidate.className === object.className &&
+      candidate._getId &&
+      object._getId &&
+      candidate._getId() === object._getId()
+  )
+}
+
 class ParseEngineTransaction {
   _state = 'open'
   _token = null
@@ -177,13 +196,31 @@ class ParseEngineTransaction {
   enqueueSave(objects) {
     this._assertOpen()
     this._assertSingleKind('save')
-    this._pending.save.push(...objects)
+    this._enqueue('save', objects)
   }
 
   enqueueDestroy(objects) {
     this._assertOpen()
     this._assertSingleKind('destroy')
-    this._pending.destroy.push(...objects)
+    this._enqueue('destroy', objects)
+  }
+
+  // Queuing the same object twice in one transaction expresses ONE write, not two:
+  // everything set() between the two calls accumulates on that same instance and goes out
+  // with the single commit either way. Keeping both copies only costs a redundant round
+  // trip in the sequential fallback - and fires that object's afterSave trigger twice for
+  // one logical change, which is a behaviour difference against the atomic path rather
+  // than merely wasted work (Parse.Object.saveAll collapses duplicates itself, so the
+  // atomic path only ever fires it once). `writes` therefore reports writes actually
+  // sent, not calls enqueued.
+  _enqueue(kind, objects) {
+    const queued = this._pending[kind]
+    for (const object of objects) {
+      if (!object || alreadyQueued(queued, object)) {
+        continue
+      }
+      queued.push(object)
+    }
   }
 
   async commit() {
@@ -242,16 +279,16 @@ class ParseEngineTransaction {
       return true
     }
 
-    const batchMethod =
-      kind === 'save' ? Parse.Object.saveAll : Parse.Object.destroyAll
-
     const depths = pendingDepths(objects)
 
     try {
-      await batchMethod(objects, {
-        ...this._options,
-        transaction: true
-      })
+      // Invoked as a method on Parse.Object rather than through an extracted reference:
+      // detaching a static drops its receiver, so `this` would be undefined inside it.
+      // Neither saveAll nor destroyAll happens to read `this` today, which is the only
+      // reason the extracted form worked - not something to keep depending on.
+      await (kind === 'save'
+        ? Parse.Object.saveAll(objects, { ...this._options, transaction: true })
+        : Parse.Object.destroyAll(objects, { ...this._options, transaction: true }))
       return false
     } catch (error) {
       // Before anything else, and whether or not this turns out to be the standalone

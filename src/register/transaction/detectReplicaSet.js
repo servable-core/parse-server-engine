@@ -8,9 +8,12 @@ import { MongoClient } from 'mongodb'
 // deliberately doesn't leak internal error text over the wire) - indistinguishable
 // from any other unrelated commit failure by error code/message alone. So
 // this checks the real topology directly instead of trying to sniff the
-// error, and is only ever called *after* a commit has already failed, to
-// decide whether that failure was topology-related (fall back) or a real
-// error (rethrow it unchanged).
+// error. Called in two places by commit(): up front, to skip sending a batch
+// that is already known not to be able to commit atomically (which also
+// avoids the pending-ops corruption a failed batch causes - see the
+// transaction module's restorePendingDepths), and again after an actual
+// commit failure, to decide whether that failure was topology-related
+// (fall back) or a real error (rethrow it unchanged).
 //
 // Returns true ONLY when standalone is confirmed - every other outcome
 // (replica set confirmed, or the check itself couldn't run) returns false,

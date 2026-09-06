@@ -1,3 +1,5 @@
+import fs from 'fs'
+
 export const getOnePlain = async props => {
   const { objectId, className, useMasterKey = false } = props;
   const query = new Servable.App.Query(className);
@@ -187,7 +189,10 @@ export const destroyItemsInArray = async props => {
   return Promise.all(items.map(_destroyItemInArray));
 };
 
-export const saveFileDataToFS = async ({ file, path = "temp/files" }) => {
+// `path` defaults to the directory this always used to hard-code, so existing callers
+// keep writing where they did - but it is now actually honoured instead of being accepted
+// and ignored.
+export const saveFileDataToFS = async ({ file, path = "/uploads" }) => {
   if (!file) {
     return null;
   }
@@ -198,13 +203,20 @@ export const saveFileDataToFS = async ({ file, path = "temp/files" }) => {
       return null;
     }
 
-    const dirPath = "/uploads";
-    if (!fs.existsSync()) {
-      await fs.promises.mkdir(dirPath);
-    }
+    // `recursive: true` rather than an existsSync() guard: it creates parents as needed
+    // and, unlike plain mkdir(), does NOT throw EEXIST when the directory is already
+    // there. The guard it replaces was `fs.existsSync()` called with no argument at all,
+    // so it always evaluated false and mkdir ran on every call - meaning that once the
+    // directory existed (the normal case - it is usually a mount), every call threw
+    // EEXIST, got swallowed by the catch below, and returned null having written nothing.
+    // (`fs` was also never imported in this module, so the very first statement threw a
+    // ReferenceError into that same catch - this function had never once succeeded.)
+    await fs.promises.mkdir(path, { recursive: true });
 
-    const filePath = `${dirPath}/${file.name}`;
+    const filePath = `${path}/${file.name}`;
     await fs.promises.writeFile(filePath, data);
+    // Returned so a caller can tell success from the null returned on every failure path.
+    return filePath;
   } catch (e) {
     console.error(e);
     return null;

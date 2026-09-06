@@ -9,6 +9,21 @@
 // varied to patch safely.
 const withMasterKey = (options = {}) => ({ useMasterKey: true, ...options })
 
+// Mirrors Parse's own module-private _getClassNameFromQueries, including its error, so a
+// mismatched compose fails the same way it does today rather than building a nonsense query.
+const classNameFromQueries = (queries) => {
+  let className = null
+  queries.forEach(query => {
+    if (!className) {
+      className = query.className
+    }
+    if (className !== query.className) {
+      throw new Error('All queries must be for the same class.')
+    }
+  })
+  return className
+}
+
 // Matches register/index.js's own convention of referencing the `Parse`
 // global directly rather than importing the `parse` package a second time -
 // parse-server's own require of `parse` sets this global as a side effect,
@@ -57,4 +72,31 @@ export default class Query extends Parse.Query {
 
   // subscribe() (LiveQuery) authenticates via sessionToken, not master key -
   // left unoverridden on purpose.
+
+  // Parse's own or()/and()/nor() hard-code `new ParseQuery(className)` rather than
+  // `new this(...)`, so calling them on this subclass hands back a PLAIN Parse.Query -
+  // silently opting the result back out of the master-key defaulting above, which is the
+  // one thing this class exists to provide. Nothing errors; the query just quietly returns
+  // ACL-filtered results. Overridden here so a composed query stays a Servable query.
+  //
+  // `new this(...)` (not `new Query(...)`) so a further subclass keeps its own type.
+  // _orQuery/_andQuery/_norQuery are inherited prototype methods, so this composes exactly
+  // the same query Parse would have built - only the constructor differs.
+  static or(...queries) {
+    const query = new this(classNameFromQueries(queries))
+    query._orQuery(queries)
+    return query
+  }
+
+  static and(...queries) {
+    const query = new this(classNameFromQueries(queries))
+    query._andQuery(queries)
+    return query
+  }
+
+  static nor(...queries) {
+    const query = new this(classNameFromQueries(queries))
+    query._norQuery(queries)
+    return query
+  }
 }
