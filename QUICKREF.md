@@ -1,5 +1,17 @@
 # @servable/parse-server-engine — Quick Reference
 
+## Launching (unischema)
+
+One function now, not two:
+
+```js
+import engine from '@servable/parse-server-engine'
+// engine.launch({ schema, configuration, app })  - called by @servable/server's boot/index.js,
+// never directly by an app
+```
+
+`launchWithMigration`/`launchWithNoMigration` no longer exist — see `CLAUDE.md` for why the migrate/no-migrate distinction was removed rather than kept as a choice. Every boot passes the full class `definitions` to Parse Server's `schema` option; whether that boot was safe to happen at all was already decided one layer up, in `@servable/server`'s boot-time compatibility check.
+
 ## Transactions
 
 Concrete implementation of the `Servable.App.Transaction` contract defined in `@servable/server` (see that package's `QUICKREF.md` for the taxonomy this conforms to). Real MongoDB-session-backed atomicity - not a custom shim - via `Parse.Object.saveAll()`/`destroyAll()` with `{ transaction: true }`, which parse-server wraps in `DatabaseController.createTransactionalSession()` (backed by `MongoStorageAdapter`'s real `session.startTransaction()`). Requires the backing MongoDB to be a replica set to actually commit.

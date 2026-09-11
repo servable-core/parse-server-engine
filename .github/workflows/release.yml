@@ -4,7 +4,7 @@ name: Release
 
 on:
   push:
-    branches: [ main, next, next-major, beta, alpha, 'release-[0-9]+.x.x', release ]
+    branches: [ main, next, next-major, beta, alpha, unischema, 'release-[0-9]+.x.x', release ]
   pull_request:
     branches: '*'
     paths-ignore:
