@@ -67,7 +67,6 @@
   ],
   "dependencies": {
     "@hokify/agenda": "^6.3.0",
-    "agenda": "*",
     "axios": "^1.6.2",
     "bluebird": "^3.7.2",
     "body-parser": "^2.2.0",

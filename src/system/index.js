@@ -37,10 +37,6 @@ export default {
       `mongodb://${mongoService.environment.MONGO_INITDB_ROOT_USERNAME}:${mongoService.environment.MONGO_INITDB_ROOT_PASSWORD}@localhost:${mongoService.ports[0].published}/${mongoService.environment.MONGO_INITDB_DATABASE}?authSource=admin&readPreference=primary&ssl=false`
       : ''
 
-    const configSERVABLE_UTILS_DATABASE_URI = mongoService ?
-      `mongodb://${mongoService.environment.MONGO_INITDB_ROOT_USERNAME}:${mongoService.environment.MONGO_INITDB_ROOT_PASSWORD}@localhost:${mongoService.ports[0].published}/utils?authSource=admin&readPreference=primary&ssl=false`
-      : ''
-
     let filesAdapterEndPoint
     const storageService = config.services['engine-minio']
     if (storageService) {
@@ -56,7 +52,8 @@ export default {
     }
 
     return {
-      utilsDatabaseURI: envOr(process.env.SERVABLE_UTILS_DATABASE_URI, configSERVABLE_UTILS_DATABASE_URI), //#TODO: remove from engine
+      // utilless: no utils database URI here any more - the engine's state store lives in the
+      // engine database, and nothing in this package reads a utils database.
       filesAdapterEndPoint: envOr(process.env.ENGINE_OBJECTSTORAGE_ENDPOINT, filesAdapterEndPoint),
       databaseURI: envOr(process.env.ENGINE_DATABASE_URI, configSERVABLE_DATABASE_URI),
     }

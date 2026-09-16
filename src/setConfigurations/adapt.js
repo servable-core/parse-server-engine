@@ -11,11 +11,6 @@ export default ({
     key: "production",
     enabled: true,
     params: {},
-    lock: {
-      enabled: true,
-      ...(configuration.lock ? configuration.lock : {}),
-      databaseURI: servableConfig.envs.utilsDatabaseURI,
-    },
     config: {
       ...(configuration.config ? configuration.config : {}),
       parse: {
