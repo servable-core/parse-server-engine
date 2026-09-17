@@ -6,6 +6,17 @@ import sanitizePath from 'path-sanitizer'
 import adaptLimits from './lib/adaptlimits.js'
 import uriFromStorage from './lib/urifromstorage.js'
 
+/**
+ * Wires the multipart-upload middleware chain (rate limit -> multer -> body parser -> handler)
+ * for one route's `options.files` configuration, then hands off to `processFunction`.
+ * @param {object} props
+ * @param {string} props.url
+ * @param {any} props.options - a route's full options object (also forwarded whole to
+ *   `processFunction`, which reads `.handler` itself); only `.files`/`.rateLimiting`/`.request`
+ *   are read directly here.
+ * @param {(props: { rateLimiting: any }) => import('express').RequestHandler} props.rateLimiter
+ * @param {any} [props.servableArguments]
+ */
 export default async ({
   url,
   options,
@@ -112,13 +123,16 @@ export default async ({
             data = { base64: str }
           }
           else {
+            // `name` was commented out (along with `native.uri = uri` below) - without it,
+            // `uriFromStorage` falls back to the raw, unsanitized `file.originalname` instead of
+            // the sanitized name `nameAdapter` just computed above, for every non-buffer (minio)
+            // upload (found via checkJs, lucide/PEAKUB DX initiative).
             uri = uriFromStorage({
               storage: options.files.storage,
               file: native,
-              // name
+              name
             })
             if (uri) {
-              // native.uri = uri
               data = { uri }
             }
           }
@@ -135,8 +149,12 @@ export default async ({
             //parseFile.setTags(tags)
             await object.save({
               progress: (progressValue) => {
-                //+console.log('progressValue: ', progressValue)
-                onProgress && onProgress(progressValue)
+                // Was a bare `onProgress` reference - not a param, not imported, not read from
+                // `options` anywhere: calling it would throw a ReferenceError from inside Parse's
+                // own progress callback on every save that reaches this line (found via checkJs,
+                // lucide/PEAKUB DX initiative). Threaded through from `options.files.onProgress`
+                // instead, mirroring the existing `options.files.nameAdapter` pattern above.
+                options.files.onProgress && options.files.onProgress(progressValue)
               },
               useMasterKey: true
             })

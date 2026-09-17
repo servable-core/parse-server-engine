@@ -124,6 +124,13 @@ const alreadyQueued = (queued, object) => {
 }
 
 class ParseEngineTransaction {
+  // Declared on the base class (unset here) so `_commitBatch`'s `this.constructor` access below
+  // type-checks - the real value only ever exists on the anonymous per-`servableConfig` subclass
+  // this file's default export returns (`class extends ParseEngineTransaction { static
+  // _servableConfig = servableConfig }`), which every real instance is actually constructed from.
+  /** @type {Record<string, any> | undefined} */
+  static _servableConfig = undefined
+
   _state = 'open'
   _token = null
   _options = {}
@@ -179,6 +186,7 @@ class ParseEngineTransaction {
     }
   }
 
+  /** @param {{ context?: Record<string, any>, [key: string]: any }} [options] */
   toWriteOptions(options = {}) {
     this._assertOpen()
     const _options = options && typeof options === 'object' ? options : {}
@@ -262,8 +270,17 @@ class ParseEngineTransaction {
   }
 
   // Returns true if it fell back to a sequential (non-atomic) commit.
+  /**
+   * @param {object} props
+   * @param {'save' | 'destroy'} props.kind
+   * @param {any[]} props.objects
+   * @returns {Promise<boolean>} true if it fell back to a sequential (non-atomic) commit.
+   */
   async _commitBatch({ kind, objects }) {
-    const servableConfig = this.constructor._servableConfig
+    // `this.constructor` is typed as the ambient lib's generic `Function`, which has no
+    // `_servableConfig` - TS doesn't narrow `.constructor` to the actual subclass's own static
+    // members. Cast to this class itself, the only constructor `_commitBatch` is ever called on.
+    const servableConfig = /** @type {typeof ParseEngineTransaction} */ (this.constructor)._servableConfig
 
     // Already known to be standalone: don't send a batch that cannot possibly commit.
     // Besides the wasted round trip, a failed transactional batch leaks a pending-ops

@@ -93,6 +93,13 @@ export const createStateStoreForDb = (db) => ({
     get: async ({ kind, type, entityId }) => bootCollection(db, kind)
       .findOne({ type, entityId }, { projection: { _id: 0 } }),
 
+    /**
+     * @param {object} props
+     * @param {'seed' | 'config'} props.kind
+     * @param {string} props.type
+     * @param {string} props.entityId
+     * @param {{ createdAt?: Date, [key: string]: any }} [props.fields]
+     */
     save: ({ kind, type, entityId, fields = {} }) => withUpsertRetry(async () => {
       const { createdAt, ...rest } = fields
       const now = new Date()
@@ -124,6 +131,11 @@ const connect = (uri) => {
   return clients.get(uri)
 }
 
+/**
+ * @param {object} [props]
+ * @param {Record<string, any>} [props.servableConfig]
+ * @returns {Promise<ReturnType<typeof createStateStoreForDb>>}
+ */
 export default async ({ servableConfig } = {}) => {
   const uri = resolveDatabaseURI(servableConfig)
   if (!uri) {

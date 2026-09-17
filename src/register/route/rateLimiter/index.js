@@ -1,6 +1,12 @@
 import rateLimit from 'express-rate-limit'
 import empty from "../empty.js"
 
+/**
+ * @param {object} props
+ * @param {{ type?: 'fixedByIp', params?: { limit?: number, window?: number, message?: string,
+ *   standardHeaders?: boolean, legacyHeaders?: boolean } }} [props.rateLimiting]
+ * @returns {import('express-rate-limit').RateLimitRequestHandler | typeof import('../empty.js').default}
+ */
 export default ({ rateLimiting = {} }) => {
   const { type, params = {} } = rateLimiting
   const {

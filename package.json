@@ -3,6 +3,7 @@
   "type": "module",
   "source": "src/index.js",
   "main": "src/index.js",
+  "types": "types/index.d.ts",
   "version": "0.0.0-development",
   "description": "Servable Parse Server Engine",
   "author": "Servable Community",
@@ -13,10 +14,12 @@
   "homepage": "https://github.com/servable-core/parse-server-engine#readme",
   "files": [
     "dist",
-    "src"
+    "src",
+    "types",
+    "global.d.ts"
   ],
   "engines": {
-    "node": ">=22"
+    "node": ">=20"
   },
   "config": {
     "commitizen": {
@@ -38,6 +41,8 @@
     "test": "run-s test:unit test:lint test:build",
     "test:build": "run-s build",
     "test:lint": "eslint .",
+    "build:types": "tsc",
+    "test:types": "tsc --noEmit",
     "test:unit_": "cross-env CI=1 react-scripts test --env=jsdom",
     "test:unit": "yarn node --require=dotenv/config --experimental-vm-modules --experimental-specifier-resolution=node $(yarn bin jest) --config ./jest.config.json",
     "test:watch": "react-scripts test --env=jsdom"
@@ -76,8 +81,10 @@
     "express": "^5.1.0",
     "express-query-boolean": "^2.0.0",
     "express-rate-limit": "^8.0.1",
+    "fast-glob": "^3.3.3",
     "fs-extra": "^11.2.0",
     "human-interval": "^2.0.1",
+    "jimp": "^0.16.13",
     "memory-cache": "^0.2.0",
     "minio": "^8.0.5",
     "moment": "*",
@@ -97,26 +104,23 @@
     "winston": "^3.7.2"
   },
   "devDependencies": {
+    "@eslint/js": "^9",
+    "@jest/globals": "^29.7.0",
     "@size-limit/preset-small-lib": "^4.10.2",
-    "babel-eslint": "^10.1.0",
     "cz-conventional-changelog": "^3.3.0",
     "dotenv": "^16.0.1",
-    "eslint": "^6.8.0",
-    "eslint-config-prettier": "^6.7.0",
-    "eslint-config-standard": "^14.1.0",
-    "eslint-config-standard-react": "^9.2.0",
-    "eslint-plugin-import": "^2.18.2",
-    "eslint-plugin-node": "^11.0.0",
-    "eslint-plugin-prettier": "^3.1.1",
-    "eslint-plugin-promise": "^4.2.1",
-    "eslint-plugin-react": "^7.17.0",
-    "eslint-plugin-standard": "^4.0.1",
+    "eslint": "^9",
+    "eslint-config-prettier": "^9",
+    "eslint-plugin-jsdoc": "^50",
+    "eslint-plugin-n": "^17",
+    "globals": "^15",
     "husky": "^6.0.0",
     "javascript-obfuscator": "^4.0.0",
     "jest": "^29.7.0",
     "npm-run-all": "^4.1.5",
     "prettier": "^2.0.4",
     "semantic-release": "^22.0.0",
-    "size-limit": "^4.10.2"
+    "size-limit": "^4.10.2",
+    "typescript": "^5"
   }
 }

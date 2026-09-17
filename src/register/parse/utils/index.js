@@ -1,5 +1,11 @@
 import fs from 'fs'
 
+/**
+ * @param {object} props
+ * @param {string} props.objectId
+ * @param {string} props.className
+ * @param {boolean} [props.useMasterKey]
+ */
 export const getOnePlain = async props => {
   const { objectId, className, useMasterKey = false } = props;
   const query = new Servable.App.Query(className);
@@ -8,6 +14,11 @@ export const getOnePlain = async props => {
   return query.first({ useMasterKey });
 };
 
+/**
+ * @param {object} props
+ * @param {any} props.query - a Parse.Query, mutated in place (limit/skip/sort applied).
+ * @param {{ sort?: 'asc' | 'desc', limit?: number, skip?: number, page?: number, withCount?: boolean }} props.options
+ */
 export const formatQuery = props => {
   const { options, query } = props;
   const { sort, limit = 100, skip = 0, page = 0, withCount = false } = options;
@@ -32,6 +43,12 @@ export const formatQuery = props => {
   }
 };
 
+/**
+ * @param {object} [props]
+ * @param {string} [props.objectId]
+ * @param {string} [props.className]
+ * @param {string | string[]} [props.include]
+ */
 export const getOneGeneric = async ({ objectId, className, include } = {}) => {
   const query = new Servable.App.Query(className);
   include && query.include(include);
@@ -39,13 +56,22 @@ export const getOneGeneric = async ({ objectId, className, include } = {}) => {
   return query.first({ useMasterKey: true });
 };
 
+/**
+ * @param {object} props
+ * @param {any} props.query - a Parse.Query, paged through via skip/limit until exhausted.
+ * @param {number} [props.batchSize]
+ * @param {(item: any) => any} props.action - run over every result, one batch at a time.
+ */
 export const performBatchOnQuery = async ({
   query,
   batchSize = 100,
   action
 }) => {
   const count = await query.count({ useMasterKey: true });
-  const expectedLoops = parseInt(count / batchSize);
+  // Was `parseInt(count / batchSize)` - parseInt takes a string; passing it a number worked
+  // only because JS coerces it via toString() first, which is what this actually meant to do
+  // with Math.floor() instead (found via checkJs, lucide/PEAKUB DX initiative).
+  const expectedLoops = Math.floor(count / batchSize);
   let currentBatchResultsLength = 0;
   let loops = 0;
 
@@ -62,6 +88,15 @@ export const performBatchOnQuery = async ({
   } while (loops < expectedLoops || currentBatchResultsLength === batchSize);
 };
 
+/**
+ * @param {object} [props]
+ * @param {any} [props.object] - either a live Parse.Object or a bare objectId string.
+ * @param {string} [props.className] - required when `object` is a bare objectId string.
+ * @param {boolean} [props.forceFetch] - re-fetch even when `object` is already a live instance.
+ * @param {string[]} [props.includes]
+ * @param {string[]} [props.excludes]
+ * @param {boolean} [props.useMasterKey]
+ */
 export const fetchObjectIfNeeded = async ({
   object,
   className,
@@ -93,6 +128,16 @@ export const fetchObjectIfNeeded = async ({
   return object;
 };
 
+/**
+ * @param {object} [props]
+ * @param {string} [props.objectId]
+ * @param {string} [props.className]
+ * @param {boolean} [props.forceFetch] - accepted for call-shape parity with `fetchObjectIfNeeded`;
+ *   unused - this function always fetches.
+ * @param {string[]} [props.includes]
+ * @param {string[]} [props.excludes]
+ * @param {boolean} [props.useMasterKey]
+ */
 export const fetchObject = async ({
   objectId,
   className,
@@ -109,17 +154,33 @@ export const fetchObject = async ({
   return query.first({ useMasterKey });
 };
 
+/**
+ * @param {object} [props]
+ * @param {any} [props.query] - a Parse.Query; NOT re-usable after this call (`.limit()` mutates
+ *   it in place, and Parse.Query has no `.clone()` call here to guard against that).
+ * @param {number} [props.limitPerBatch]
+ * @returns {Promise<number>} the number of rows destroyed in this one batch.
+ */
 export const destroyRowsWithQuery = async ({ query, limitPerBatch } = {}) => {
-  query
-    .limit(limitPerBatch)
-    .find({ useMasterKey: true })
-    .then(function (results) {
-      return Servable.App.Object.destroyAll(results).then(function () {
-        return Promise.resolve(results.length);
-      });
-    });
+  // Found via checkJs (lucide, PEAKUB DX initiative): this whole chain used to run with no
+  // `return`/`await` at all - a genuine fire-and-forget bug. The function resolved with
+  // `undefined` immediately, before the query even ran, let alone the destroy. That in turn
+  // broke `destroyAllRowsWithQuery` below, whose loop condition is this function's resolved
+  // count: since it was always `undefined`, that function always stopped after issuing exactly
+  // one (also fire-and-forget) batch, silently leaving every row past the first `limitPerBatch`
+  // undeleted whenever a caller awaited it expecting a full cascade delete.
+  const results = await query.limit(limitPerBatch).find({ useMasterKey: true });
+  await Servable.App.Object.destroyAll(results);
+  return results.length;
 };
 
+/**
+ * @param {object} [props]
+ * @param {any} [props.query] - a Parse.Query, re-run (re-`.limit()`'d) once per batch until
+ *   exhausted - safe to pass a fresh, unconsumed query even though `destroyRowsWithQuery` itself
+ *   mutates whatever query it's given.
+ * @param {number} [props.limitPerBatch]
+ */
 export const destroyAllRowsWithQuery = async ({
   query,
   limitPerBatch = 1000
@@ -131,6 +192,17 @@ export const destroyAllRowsWithQuery = async ({
   });
 };
 
+/**
+ * @param {object} [props]
+ * @param {{ masterKey?: string, userID?: string }} [props.params] - read only when `user` isn't
+ *   already given; authenticates the request via the server's own master key rather than a
+ *   session.
+ * @param {Record<string, string>} [props.headers] - read only when `user` isn't already given
+ *   and `params.masterKey` is absent; falls back to the `x-parse-master-key` header.
+ * @param {any} [props.user] - an already-resolved Parse.User; when given, skips the master-key
+ *   path entirely.
+ * @param {{ includes?: string[], excludes?: string[] }} [props.fetchOptions]
+ */
 export const prepareRequestWithUser = async ({
   params,
   headers,
@@ -165,10 +237,21 @@ export const prepareRequestWithUser = async ({
   return _user;
 };
 
+/**
+ * Destroys the single-Pointer object stored at each of `keys` on `object`, if set.
+ * @param {object} props
+ * @param {any} props.object
+ * @param {string[]} props.keys
+ */
 export const destroyItems = async ({ object, keys }) => {
   return Promise.all(keys.map(key => destroyItem({ key, object })));
 };
 
+/**
+ * @param {object} props
+ * @param {any} props.object
+ * @param {string} props.key - a field holding a single Pointer.
+ */
 export const destroyItem = async props => {
   const { object, key } = props;
   const item = object.get(key);
@@ -179,6 +262,11 @@ export const destroyItem = async props => {
   return item.destroy({ useMasterKey: true });
 };
 
+/**
+ * @param {object} props
+ * @param {any} props.object
+ * @param {string} props.key - a field holding an array of Pointers.
+ */
 export const destroyItemsInArray = async props => {
   const { object, key } = props;
   const items = object.get(key);

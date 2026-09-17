@@ -5,6 +5,14 @@ import { dirname } from "path"
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
+/**
+ * Boots the real `parse-server` instance and mounts it onto the given Express `app`.
+ * @param {object} props
+ * @param {{ parse: Record<string, any> }} props.config - `servableConfig`; only `.parse` is read.
+ * @param {() => any} [props.serverCloseComplete] - parse-server's own shutdown hook.
+ * @param {import('express').Express} props.app
+ * @returns {Promise<any>} the mounted parse-server Express app (`server.app`).
+ */
 export default async ({ config, serverCloseComplete, app }) => {
   const { parse: parseConfig } = config
   console.log('[PARSE_SERVER_ADAPTER]', '[DEBUG]', 'dolaunch>',
@@ -47,10 +55,15 @@ export default async ({ config, serverCloseComplete, app }) => {
       }
 
       console.log("[PARSE_SERVER_ADAPTER]", "\n")
+      // Was `liveClasses.map(...)` - `liveClasses` was never a defined variable anywhere in this
+      // scope (only `parseConfig.liveClasses`, checked one line up), so this line threw a
+      // ReferenceError and crashed `beforeMigration()` outright any time `parseConfig.liveClasses`
+      // was actually set - the one case this debug log exists for (found via checkJs,
+      // lucide/PEAKUB DX initiative).
       parseConfig.liveClasses &&
         console.debug(
           `---------------- ⚡️ ${parseConfig.liveClasses.length
-          } live classes ⚡️:\n ${liveClasses.map(a => ` ${a}`)}`
+          } live classes ⚡️:\n ${parseConfig.liveClasses.map(a => ` ${a}`)}`
         )
       console.log("[PARSE_SERVER_ADAPTER]", "\n")
       console.log("[PARSE_SERVER_ADAPTER]", "---------------- 🧐 launching migration 😰😰")
@@ -91,6 +104,12 @@ export default async ({ config, serverCloseComplete, app }) => {
     schema
   }
 
+  // @ts-expect-error - a real parse-server type-definition quirk, not a bug here: its own
+  // types/index.d.ts exports the *named* `ParseServer` (imported here) as a plain callable
+  // factory typed `(options) => ParseServer` with no construct signature, while the *default*
+  // export is the real `declare class ParseServer` with a proper constructor. `new` on the named
+  // export is standard, working parse-server usage regardless - confirmed by reading
+  // node_modules/parse-server/types/index.d.ts (found via checkJs, lucide/PEAKUB DX initiative).
   const server = new ParseServer({
     ...options,
     serverCloseComplete: async () => {

@@ -35,6 +35,11 @@ import { MongoClient } from 'mongodb'
 // servableConfig through (e.g. these unit tests).
 let cachedIsConfirmedStandalone = null
 
+/**
+ * @param {object} [props]
+ * @param {{ envs?: { databaseURI?: string } }} [props.servableConfig]
+ * @returns {Promise<boolean>} true only when standalone MongoDB is confirmed.
+ */
 export default async ({ servableConfig } = {}) => {
   if (cachedIsConfirmedStandalone !== null) {
     return cachedIsConfirmedStandalone

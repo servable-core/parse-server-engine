@@ -1,5 +1,10 @@
 const TRACEPARENT_RE = /^00-([0-9a-f]{32})-([0-9a-f]{16})-[0-9a-f]{2}$/i
 
+/**
+ * @param {Record<string, any>} [headers]
+ * @param {string} [headerName]
+ * @returns {any}
+ */
 const getHeaderValue = (headers = {}, headerName = '') => {
     const expected = headerName.toLowerCase()
     for (const [key, value] of Object.entries(headers || {})) {
@@ -50,6 +55,7 @@ const parseBaggage = (baggage) => {
     return values
 }
 
+/** @param {Record<string, any>} [headers] */
 const getTraceContextFromHeaders = (headers = {}) => {
     const traceparent = getHeaderValue(headers, 'traceparent')
     const baggage = getHeaderValue(headers, 'baggage')
@@ -65,6 +71,14 @@ const getTraceContextFromHeaders = (headers = {}) => {
     }
 }
 
+/**
+ * Merges W3C trace-context (traceparent/baggage headers) into `query`, without overriding
+ * anything the caller already set explicitly.
+ * @param {object} [props]
+ * @param {Record<string, any>} [props.query]
+ * @param {Record<string, any>} [props.headers]
+ * @returns {Record<string, any>}
+ */
 export const buildParamsWithTraceContext = ({ query = {}, headers = {} } = {}) => {
     const traceContext = getTraceContextFromHeaders(headers)
 

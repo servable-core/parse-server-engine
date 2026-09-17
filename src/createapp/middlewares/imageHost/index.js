@@ -8,7 +8,10 @@ export default (path) => {
         const parts = req.url.split('/')
         parts.shift() // remove first slash 
         parts.shift() // remove api-slug (differs per parse-config)
-        const isFile = parts.length == 3 & parts[0] == "files"
+        // Was `&` (bitwise) instead of `&&` - happened to produce the same truthy/falsy result
+        // here since both operands are already booleans, but is a type error waiting to bite the
+        // moment either side isn't (found via checkJs, lucide/PEAKUB DX initiative).
+        const isFile = parts.length == 3 && parts[0] == "files"
         if (!req.query.w || !isFile) {
             return next()
         }
@@ -31,7 +34,10 @@ export default (path) => {
         }//return serveImage(fileResized,res)
         // lets resize it
         const roundMeasure = 32 // we want to cache images like foo.100.png, foo-200.png etc
-        const width = roundMeasure * Math.ceil(req.query.w / roundMeasure)
+        // Was `const width` - the reassignment below threw "Assignment to constant variable" (a
+        // real runtime crash of this request handler) any time `req.query.w` rounded below
+        // roundMeasure, e.g. w=1..16 (found via checkJs, lucide/PEAKUB DX initiative).
+        let width = roundMeasure * Math.ceil(req.query.w / roundMeasure)
         if (width < roundMeasure) {
             width = roundMeasure
         }

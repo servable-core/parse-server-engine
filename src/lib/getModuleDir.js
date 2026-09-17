@@ -3,9 +3,11 @@ import path from 'path'
 import { createRequire } from 'module'
 
 /**
- * Get's the file path to a module folder.
- * @param {string} moduleEntry 
- * @param {string} fromFile 
+ * Resolves the on-disk directory of an installed npm package (or scoped package), by walking
+ * `require.resolve.paths()` for the first `node_modules/<packageName>` that actually exists.
+ * @param {string} moduleEntry - a package name, or `package/subpath` (only the package name part
+ *   is used to locate the directory).
+ * @returns {string | undefined} the package's directory, or `undefined` if not found.
  */
 export default (moduleEntry) => {
     const packageName = moduleEntry.includes('/')

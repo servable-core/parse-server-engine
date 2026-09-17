@@ -146,7 +146,11 @@ export default async ({ servableConfig }) => {
           //   return Number(val);
           // }
           // return val;
-          const val = defaultDecoder(str, defaultDecoder, charset, type);
+          // `type` ('key' | 'value') is qs's own outer decoder callback parameter, not part of
+          // defaultDecoder's signature - it only takes (str, decoder, charset). Passing it
+          // through was harmless (JS ignores extra args) but wrong; dropped (found via checkJs,
+          // lucide/PEAKUB DX initiative).
+          const val = defaultDecoder(str, defaultDecoder, charset);
 
           // Only convert if it looks like a number
           if (typeof val === 'string' && numberRegex.test(val)) {
