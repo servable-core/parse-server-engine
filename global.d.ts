@@ -59,6 +59,71 @@ declare global {
     [key: string]: any
   }
 
+  /** Every app class's own field shape, keyed by class name - e.g. `{ Reaction: Reaction }`.
+   * Deliberately empty here (not given a fallback index signature - see
+   * @servable/server's own `ServableServiceCallMap` for why: an index signature would widen
+   * `keyof` back to plain `string`, defeating the one thing this exists for). Sharpened per-app
+   * by @servable/tools' `generateSchemaTypes()`, the same command that already generates a
+   * plain interface per class - it also merges each one in here under its own name.
+   *
+   * lucide 0.7 (typed-object), PEAKUB DX initiative: added alongside `Typed` below rather than
+   * by retrofitting `Object`/`Query` themselves - a real survey of this codebase's own call
+   * sites found ~235 places (dominated by `new Servable.App.Query(this.className)`, present in
+   * every single subclass's own class.js) that pass a non-literal string and would have become
+   * new, 100%-false-positive errors under a strict-only `Object`/`Query` signature, with no way
+   * to keep those working AND catch a bad literal at the same time (TypeScript's overload
+   * resolution tries a permissive `string` fallback before rejecting a bad literal, so a
+   * fallback loose enough not to break those sites is also loose enough to accept a typo like
+   * '_Reaction' silently - confirmed via a standalone tsc test before choosing this design
+   * instead). `Object`/`Query` themselves are therefore untouched, zero regression risk; `Typed`
+   * is a new, separate, fully opt-in surface for whoever wants real validation on a literal
+   * class name. */
+  interface ServableClassMap {
+  }
+
+  /** A Parse.Object narrowed to a specific app class's real fields - `.get()`/`.set()` are
+   * checked against `T` instead of accepting any string. Everything else (`.save()`, ACL,
+   * etc.) still behaves like a normal Parse.Object; only these two are overridden. */
+  interface TypedParseObject<T> {
+    get<K extends keyof T>(attr: K): T[K]
+    set<K extends keyof T>(attr: K, value: T[K]): this
+    id: string
+    className: string
+    save(attrs?: Record<string, any>, options?: Record<string, any>): Promise<this>
+    destroy(options?: Record<string, any>): Promise<this>
+    fetch(options?: Record<string, any>): Promise<this>
+    toJSON(): Record<string, any>
+  }
+
+  /** A Parse.Query narrowed the same way `TypedParseObject` narrows Object - `equalTo`/etc. and
+   * every read method's results are checked against/return `T`. */
+  interface TypedParseQuery<T> {
+    equalTo<K extends keyof T>(key: K, value: T[K]): this
+    notEqualTo<K extends keyof T>(key: K, value: T[K]): this
+    exists<K extends keyof T>(key: K): this
+    doesNotExist<K extends keyof T>(key: K): this
+    ascending<K extends keyof T>(key: K): this
+    descending<K extends keyof T>(key: K): this
+    select<K extends keyof T>(...keys: K[]): this
+    include<K extends keyof T>(...keys: K[]): this
+    limit(n: number): this
+    skip(n: number): this
+    find(options?: Record<string, any>): Promise<TypedParseObject<T>[]>
+    first(options?: Record<string, any>): Promise<TypedParseObject<T> | undefined>
+    get(objectId: string, options?: Record<string, any>): Promise<TypedParseObject<T>>
+    count(options?: Record<string, any>): Promise<number>
+    [key: string]: any
+  }
+
+  /** `Servable.App.Typed` - see `ServableClassMap`'s own comment for why this exists as a
+   * separate, opt-in surface instead of sharpening `Object`/`Query` themselves. Real
+   * implementation just constructs a normal `Object`/`Query` (see register/typed/index.js) -
+   * this interface is the only thing that changes. */
+  interface ServableTyped {
+    object<K extends keyof ServableClassMap>(className: K): TypedParseObject<ServableClassMap[K]>
+    query<K extends keyof ServableClassMap>(className: K): TypedParseQuery<ServableClassMap[K]>
+  }
+
   interface ServableApp {
     /** Parse.Object, except constructing by class name resolves the registered subclass (so
      * protocol mixins are present from birth) - see register/object/index.js. */
@@ -83,6 +148,11 @@ declare global {
     Transaction: ServableAppTransaction
     Route: ServableAppRoute
     Jobs: ServableAppJobs
+
+    /** Opt-in, validated alternative to `new Object(className)`/`new Query(className)` - see
+     * `ServableClassMap`'s own comment for why this is separate rather than a change to those.
+     * Real implementation: register/typed/index.js. */
+    Typed: ServableTyped
 
     /** Misc Parse-adjacent helpers - see register/parse/utils/index.js. */
     Utils: Record<string, any>

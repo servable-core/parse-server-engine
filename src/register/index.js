@@ -5,15 +5,17 @@ import jobs from './jobs/index.js'
 import createTransaction from './transaction/index.js'
 import Query from './query/index.js'
 import createObject from './object/index.js'
+import createTyped from './typed/index.js'
 
 ParseServer.S3Adapter
 
 export default async ({ servableConfig }) => {
   const Transaction = createTransaction({ Parse, servableConfig })
+  const ObjectClass = createObject({ Parse })
 
   return ({
     ..._parse,
-    Object: createObject({ Parse }),
+    Object: ObjectClass,
     Query,
     Cloud: Parse.Cloud,
     User: Parse.User,
@@ -27,7 +29,8 @@ export default async ({ servableConfig }) => {
     ACL: Parse.ACL,
     Transaction,
     Route: route({ servableConfig }),
-    Jobs: jobs({ servableConfig })
+    Jobs: jobs({ servableConfig }),
+    Typed: createTyped({ ObjectClass, QueryClass: Query })
   })
 }
 
