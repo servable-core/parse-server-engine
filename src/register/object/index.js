@@ -43,13 +43,30 @@ const classNameOf = (first) => {
   return null
 }
 
+// The subclasses the Parse SDK registers for its own built-in classes, at import time, before any
+// app or protocol has registered anything. They are client-SDK types, not protocol mixins, and
+// ParseSession in particular declares createdWith/expiresAt/installationId/restricted/
+// sessionToken/user read-only - so resolving `new Servable.App.Object('_Session')` to it made
+// every server-side session mint throw "Cannot modify readonly attribute: sessionToken" on its
+// first set(). That broke backend/main's magic-code sign-in in production from the day this
+// proxy shipped (PEAKUB, 2026-09-23). Constructing one of these by name therefore keeps Parse's
+// own plain-object behaviour, exactly as before the proxy existed; an app or protocol that
+// registers its OWN subclass for one of these classes replaces the SDK's entry in the class map
+// and is resolved as usual.
+const parseSdkBuiltInSubclassesOf = (Parse) => [Parse.Session, Parse.User, Parse.Installation, Parse.Role]
+  .filter(Boolean)
+
 const registeredSubclassFor = ({ Parse, className }) => {
   if (!className || typeof Parse.Object._getClassMap !== 'function') {
     return null
   }
   // Live reference to Parse's own map, so a class registered later in launch is picked up
   // without any cache to invalidate here.
-  return Parse.Object._getClassMap()[className] || null
+  const Subclass = Parse.Object._getClassMap()[className] || null
+  if (Subclass && parseSdkBuiltInSubclassesOf(Parse).includes(Subclass)) {
+    return null
+  }
+  return Subclass
 }
 
 export default ({ Parse }) => {
