@@ -1,4 +1,5 @@
 import express from "express";
+import { applyTrustProxy } from "./trustProxy.js";
 import compression from 'compression';
 // import bodyParser from 'body-parser'
 import qs from 'qs';
@@ -46,6 +47,15 @@ const normalizeOrigin = (origin) => origin
 
 export default async ({ servableConfig }) => {
   const app = express()
+  // Before any middleware, so everything after it (CORS, rate limiters, routes) sees the client's
+  // address in req.ip rather than the proxy's. See trustProxy.js.
+  const trustProxySetting = applyTrustProxy({
+    app,
+    rawValue: servableConfig.envs?.['engineTrustProxy'] ?? process.env.SERVABLE_ENGINE_TRUST_PROXY,
+  })
+  if (trustProxySetting !== undefined) {
+    console.log("[ENGINE] trust proxy", trustProxySetting)
+  }
   app.use(compression())
 
   // app.use(express.json({

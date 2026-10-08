@@ -26,9 +26,11 @@ export default ({ rateLimiting = {} }) => {
         message,
         standardHeaders, // Return rate limit info in the `RateLimit-*` headers
         legacyHeaders, // Disable the `X-RateLimit-*` headers,
-        validate: {
-          xForwardedForHeader: false //https://express-rate-limit.mintlify.app/reference/error-codes#err-erl-unexpected-x-forwarded-for
-        }
+        // Keyed on req.ip (the library's default). Behind a proxy that is only the visitor when the app
+        // sets "trust proxy" (SERVABLE_ENGINE_TRUST_PROXY, createapp/trustProxy.js); without it every visitor
+        // shares the proxy's bucket. The library's own checks stay on, so that mistake is logged
+        // (ERR_ERL_UNEXPECTED_X_FORWARDED_FOR) instead of silently passing:
+        // https://express-rate-limit.mintlify.app/reference/error-codes
       })
     }
     default: {
