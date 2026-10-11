@@ -25,7 +25,7 @@ services:
       PARSE_DASHBOARD_USER_PASSWORD:  "<%= engineDashboardUserPassword %>"
       PARSE_DASHBOARD_ALLOW_INSECURE_HTTP: 1
   engine-minio:
-    image: bitnami/minio:latest
+    image: soldevelo/minio:latest
     restart: always
     ports:
       - 9000:9000
