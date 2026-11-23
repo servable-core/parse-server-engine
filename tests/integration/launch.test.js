@@ -83,7 +83,7 @@ describeIfMongo('the engine launch (real Parse Server, real MongoDB)', () => {
     const schemaRow = await db.collection('_SCHEMA').findOne({ _id: 'UniqueClaim' })
     expect(schemaRow?._metadata?.indexes).toEqual(expect.objectContaining({ _key_: { key: 1 } }))
     // The patches were installed once Parse had started.
-    expect(infos).toContainEqual(['[ENGINE] patches', { schemaControllerReuse: 'installed', fastObjectGet: 'switched off' }])
+    expect(infos).toContainEqual(['[ENGINE] patches', { schemaControllerReuse: 'installed', fastObjectGet: 'switched off', lazyFetchSnapshot: 'switched off' }])
 
     // The declared indexes come after the launch has returned.
     const deadline = Date.now() + 10000

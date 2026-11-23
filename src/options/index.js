@@ -7,6 +7,7 @@
 //   isSchemaControllerReuseEnabled  PARSE_SCHEMA_CONTROLLER_REUSE      on   one SchemaController per schema cache, not per query (patches/reuseSchemaController.js)
 //   areDeclaredIndexesEnsured       SERVABLE_ENSURE_DECLARED_INDEXES   on   the `ensuredIndexes` of the schema made after boot, in the background (indexes/)
 //   isSchemaMigrationForced         SERVABLE_FORCE_SCHEMA_MIGRATION    off  Parse's schema migration runs at every boot, even when nothing changed since the last one (schemaMigration/)
+//   isLazyFetchSnapshotEnabled      PARSE_LAZY_FETCH_SNAPSHOT          off  the SDK's snapshot of a query result's object fields is computed when first read, not at every fetch (patches/lazyFetchSnapshot.js)
 //   isQueryValueGuessingEnabled     SERVABLE_QUERY_VALUE_GUESSING      on   a query parameter no route declares is guessed (number-looking text a number, `true`/`false` booleans); off, it is the text the client sent (register/route/parameters/)
 //   areDeclaredRouteParametersTyped SERVABLE_TYPED_ROUTE_PARAMETERS    on   a parameter a route declares in `schema.queryString` is read as its type, defaulted, and refused (400) when it cannot be; off, every parameter is read as undeclared (register/route/parameters/)
 //   areUndeclaredParameterRoutesRefused SERVABLE_REFUSE_UNDECLARED_PARAMETER_ROUTES off  with guessing off, defining a route whose handler reads its parameters and that declares none throws, so the boot stops (register/route/parameters/)
@@ -16,6 +17,7 @@ export const ENGINE_OPTIONS = {
   isSchemaControllerReuseEnabled: { environmentVariable: 'PARSE_SCHEMA_CONTROLLER_REUSE', defaultValue: true },
   areDeclaredIndexesEnsured: { environmentVariable: 'SERVABLE_ENSURE_DECLARED_INDEXES', defaultValue: true },
   isSchemaMigrationForced: { environmentVariable: 'SERVABLE_FORCE_SCHEMA_MIGRATION', defaultValue: false },
+  isLazyFetchSnapshotEnabled: { environmentVariable: 'PARSE_LAZY_FETCH_SNAPSHOT', defaultValue: false },
   isQueryValueGuessingEnabled: { environmentVariable: 'SERVABLE_QUERY_VALUE_GUESSING', defaultValue: true },
   areDeclaredRouteParametersTyped: { environmentVariable: 'SERVABLE_TYPED_ROUTE_PARAMETERS', defaultValue: true },
   areUndeclaredParameterRoutesRefused: { environmentVariable: 'SERVABLE_REFUSE_UNDECLARED_PARAMETER_ROUTES', defaultValue: false },
@@ -47,7 +49,7 @@ export const booleanFromEnvironmentValue = (rawValue) => {
  * @param {object} [props]
  * @param {Record<string, any>} [props.engineConfiguration] - `servableConfig.configuration.config.engine`.
  * @param {Record<string, string | undefined>} [props.env]
- * @returns {{ isFastObjectGetEnabled: boolean, isSchemaControllerReuseEnabled: boolean, areDeclaredIndexesEnsured: boolean, isSchemaMigrationForced: boolean, isQueryValueGuessingEnabled: boolean, areDeclaredRouteParametersTyped: boolean, areUndeclaredParameterRoutesRefused: boolean }}
+ * @returns {{ isFastObjectGetEnabled: boolean, isSchemaControllerReuseEnabled: boolean, areDeclaredIndexesEnsured: boolean, isSchemaMigrationForced: boolean, isLazyFetchSnapshotEnabled: boolean, isQueryValueGuessingEnabled: boolean, areDeclaredRouteParametersTyped: boolean, areUndeclaredParameterRoutesRefused: boolean }}
  */
 export const engineOptionsFrom = ({ engineConfiguration = {}, env = process.env } = {}) => {
   /** @type {any} */
