@@ -16,10 +16,12 @@ import uriFromStorage from './lib/urifromstorage.js'
  *   are read directly here.
  * @param {(props: { rateLimiting: any, routeKey?: string }) => import('express').RequestHandler} props.rateLimiter
  * @param {any} [props.servableArguments]
+ * @param {any} [props.routeParametersReader] - the route's parameters reader (parameters/index.js).
  */
 export default async ({
   url,
   options,
+  routeParametersReader,
   rateLimiter,
   servableArguments,
 }) => {
@@ -172,6 +174,7 @@ export default async ({
       await processFunction({
         servableArguments,
         options,
+        routeParametersReader,
         request,
         response,
         next,

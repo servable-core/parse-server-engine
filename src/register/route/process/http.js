@@ -5,6 +5,7 @@ import { markAnswerAsAnError } from '../cache/lib/cachedAnswer.js'
 export default async ({
   servableArguments,
   extra = {},
+  routeParametersReader,
   options: {
     handler,
     requireUser = false, //#TODO: add requireUserKeys https://docs.parseplatform.org/cloudcode/guide/#cloud-functions
@@ -14,7 +15,10 @@ export default async ({
   response,
   next }) => {
   try {
-    const _request = requestAdapter({ request })
+    // The query string read as the route declares it (parameters/index.js): a value that cannot be read throws a 400
+    // here, before anything else runs. Without a reader (a caller of this function that predates it), Express's query.
+    const query = routeParametersReader ? routeParametersReader.readQueryOf(request) : undefined
+    const _request = requestAdapter({ request, query })
     const native = {
       request,
       response,

@@ -5,10 +5,15 @@ import processHttp from './process/http.js'
 import sanitizePath from 'path-sanitizer'
 // import uploadfile from "./verbs/uploadfile/index.js"
 import handleFunction from "./verbs/function/index.js"
-import { routeCacheBypassSecretFrom } from '../../options/index.js'
+import engineOptionsFrom, { routeCacheBypassSecretFrom } from '../../options/index.js'
+import { createRouteParametersReader, recordUndeclaredRoute, undeclaredParameterRoutes } from './parameters/index.js'
+import { reportTheUndeclaredParameterRoutesSoon } from './parameters/bootReport.js'
 
 export default ({ servableConfig }) => {
   const item = {}
+
+  // The routes defined without a `schema.queryString` (parameters/bootReport.js), for an app's own checks.
+  item.undeclaredParameterRoutes = undeclaredParameterRoutes
 
   item.define = async (options) => {
     if (typeof options === 'function') {
@@ -36,6 +41,27 @@ export default ({ servableConfig }) => {
     // same secret; it is an option of the engine (options/index.js), the environment winning.
     const bypassSecret = routeCacheBypassSecretFrom({ engineConfiguration: servableConfig?.configuration?.config?.engine })
     const urls = paths ? paths : (path ? [path] : (url ? [url] : []))
+
+    // The route's parameters, read as `schema.queryString` declares them (parameters/index.js), compiled once here.
+    const {
+      isQueryValueGuessingEnabled,
+      areDeclaredRouteParametersTyped,
+      areUndeclaredParameterRoutesRefused,
+    } = engineOptionsFrom({ engineConfiguration: servableConfig?.configuration?.config?.engine })
+    const routeName = `${String(method).toUpperCase()} ${urls.map((routePath) => (prefix ? `${prefix}/${routePath}` : routePath)).join(', ')}`
+    const routeParametersReader = createRouteParametersReader({
+      queryStringDeclaration: schema?.queryString,
+      isQueryValueGuessingEnabled,
+      areDeclaredRouteParametersTyped,
+      routeName,
+    })
+    if (!routeParametersReader.isDeclared) {
+      const undeclaredRoute = recordUndeclaredRoute({ routeName, handler })
+      if (areUndeclaredParameterRoutesRefused && !isQueryValueGuessingEnabled && undeclaredRoute.doesSeemToReadParameters) {
+        throw new Error(`[ENGINE] [route parameters] ${routeName} reads its parameters and declares none in schema.queryString, while query value guessing is off (areUndeclaredParameterRoutesRefused)`)
+      }
+      reportTheUndeclaredParameterRoutesSoon()
+    }
     return Promise.all(urls.map(async _path => {
       switch (method.toLowerCase()) {
         case 'get': {
@@ -52,6 +78,7 @@ export default ({ servableConfig }) => {
               await processHttp({
                 servableArguments,
                 options,
+                routeParametersReader,
                 request,
                 response,
                 next
@@ -72,6 +99,7 @@ export default ({ servableConfig }) => {
               await processHttp({
                 servableArguments,
                 options,
+                routeParametersReader,
                 request,
                 response,
                 next
@@ -92,6 +120,7 @@ export default ({ servableConfig }) => {
               await processHttp({
                 servableArguments,
                 options,
+                routeParametersReader,
                 request,
                 response,
                 next
@@ -114,6 +143,7 @@ export default ({ servableConfig }) => {
               await processHttp({
                 servableArguments,
                 options,
+                routeParametersReader,
                 request,
                 response,
                 next
@@ -136,6 +166,7 @@ export default ({ servableConfig }) => {
               await processHttp({
                 servableArguments,
                 options,
+                routeParametersReader,
                 request,
                 response,
                 next
@@ -158,6 +189,7 @@ export default ({ servableConfig }) => {
               await processHttp({
                 servableArguments,
                 options,
+                routeParametersReader,
                 request,
                 response,
                 next
@@ -180,6 +212,7 @@ export default ({ servableConfig }) => {
               await processHttp({
                 servableArguments,
                 options,
+                routeParametersReader,
                 request,
                 response,
                 next
@@ -202,6 +235,7 @@ export default ({ servableConfig }) => {
               await processHttp({
                 servableArguments,
                 options,
+                routeParametersReader,
                 request,
                 response,
                 next
@@ -222,6 +256,7 @@ export default ({ servableConfig }) => {
               await processHttp({
                 servableArguments,
                 options,
+                routeParametersReader,
                 request,
                 response,
                 next
@@ -236,6 +271,7 @@ export default ({ servableConfig }) => {
           await handleFunction({
             url: __url,
             options,
+            routeParametersReader,
             rateLimiter: _rateLimiter,
             servableArguments,
           })

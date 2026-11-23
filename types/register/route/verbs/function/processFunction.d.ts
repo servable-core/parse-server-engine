@@ -1,6 +1,7 @@
-declare function _default({ servableArguments, extra, options: { handler, requireUser, requireStepUp }, request, response, next }: {
+declare function _default({ servableArguments, extra, routeParametersReader, options: { handler, requireUser, requireStepUp }, request, response, next }: {
     servableArguments: any;
     extra?: {};
+    routeParametersReader: any;
     options: {
         handler: any;
         requireUser?: boolean;

@@ -1,6 +1,6 @@
 import { jest } from '@jest/globals'
 import Parse from 'parse/node.js'
-import { engineOptionsFrom, booleanFromEnvironmentValue } from '../../src/options/index.js'
+import { ENGINE_OPTIONS, engineOptionsFrom, booleanFromEnvironmentValue } from '../../src/options/index.js'
 import installTheEnginePatches from '../../src/patches/index.js'
 
 // The engine's options and the patches they switch: what an app gets without writing anything (the defaults of
@@ -9,22 +9,23 @@ import installTheEnginePatches from '../../src/patches/index.js'
 
 describe('the engine options', () => {
   test('are the defaults when the app sets nothing and no variable says anything', () => {
-    expect(engineOptionsFrom({ env: {} })).toEqual({ isFastObjectGetEnabled: false, isSchemaControllerReuseEnabled: true, areDeclaredIndexesEnsured: true })
-    expect(engineOptionsFrom({ engineConfiguration: undefined, env: {} })).toEqual({ isFastObjectGetEnabled: false, isSchemaControllerReuseEnabled: true, areDeclaredIndexesEnsured: true })
+    expect(engineOptionsFrom({ env: {} })).toEqual(Object.fromEntries(Object.entries(ENGINE_OPTIONS).map(([name, { defaultValue }]) => [name, defaultValue])))
+    expect(engineOptionsFrom({ env: {} })).toMatchObject({ isFastObjectGetEnabled: false, isSchemaControllerReuseEnabled: true, areDeclaredIndexesEnsured: true })
+    expect(engineOptionsFrom({ engineConfiguration: undefined, env: {} })).toMatchObject({ isFastObjectGetEnabled: false, isSchemaControllerReuseEnabled: true, areDeclaredIndexesEnsured: true })
   })
 
   test('follow the app\'s choice, and only booleans', () => {
     expect(engineOptionsFrom({ engineConfiguration: { isFastObjectGetEnabled: true, isSchemaControllerReuseEnabled: false, areDeclaredIndexesEnsured: false }, env: {} }))
-      .toEqual({ isFastObjectGetEnabled: true, isSchemaControllerReuseEnabled: false, areDeclaredIndexesEnsured: false })
+      .toMatchObject({ isFastObjectGetEnabled: true, isSchemaControllerReuseEnabled: false, areDeclaredIndexesEnsured: false })
     expect(engineOptionsFrom({ engineConfiguration: { isFastObjectGetEnabled: 'yes' }, env: {} }).isFastObjectGetEnabled).toBe(false)
   })
 
   test('are overridden by their environment variable when it says on or off, whatever the app chose', () => {
     const engineConfiguration = { isFastObjectGetEnabled: false, isSchemaControllerReuseEnabled: true, areDeclaredIndexesEnsured: true }
     expect(engineOptionsFrom({ engineConfiguration, env: { PARSE_FAST_OBJECT_GET: '1', PARSE_SCHEMA_CONTROLLER_REUSE: '0', SERVABLE_ENSURE_DECLARED_INDEXES: 'off' } }))
-      .toEqual({ isFastObjectGetEnabled: true, isSchemaControllerReuseEnabled: false, areDeclaredIndexesEnsured: false })
+      .toMatchObject({ isFastObjectGetEnabled: true, isSchemaControllerReuseEnabled: false, areDeclaredIndexesEnsured: false })
     expect(engineOptionsFrom({ engineConfiguration, env: { PARSE_FAST_OBJECT_GET: 'maybe', PARSE_SCHEMA_CONTROLLER_REUSE: '' } }))
-      .toEqual(engineConfiguration)
+      .toMatchObject(engineConfiguration)
   })
 
   test('read on and off the way backend/main read its switches', () => {

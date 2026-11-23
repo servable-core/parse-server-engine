@@ -6,6 +6,7 @@ export default async ({
   options,
   rateLimiter,
   servableArguments,
+  routeParametersReader,
   url
 }) => {
   // Servable.AppNative.use((req, res, next) => {
@@ -30,6 +31,7 @@ export default async ({
         await processFunction({
           servableArguments,
           options,
+          routeParametersReader,
           request,
           response,
           next
@@ -41,6 +43,7 @@ export default async ({
   return handleFiles({
     url,
     options,
+    routeParametersReader,
     rateLimiter,
     servableArguments,
   })

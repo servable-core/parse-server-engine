@@ -15,6 +15,24 @@ export namespace ENGINE_OPTIONS {
         let defaultValue_2: boolean;
         export { defaultValue_2 as defaultValue };
     }
+    namespace isQueryValueGuessingEnabled {
+        let environmentVariable_3: string;
+        export { environmentVariable_3 as environmentVariable };
+        let defaultValue_3: boolean;
+        export { defaultValue_3 as defaultValue };
+    }
+    namespace areDeclaredRouteParametersTyped {
+        let environmentVariable_4: string;
+        export { environmentVariable_4 as environmentVariable };
+        let defaultValue_4: boolean;
+        export { defaultValue_4 as defaultValue };
+    }
+    namespace areUndeclaredParameterRoutesRefused {
+        let environmentVariable_5: string;
+        export { environmentVariable_5 as environmentVariable };
+        let defaultValue_5: boolean;
+        export { defaultValue_5 as defaultValue };
+    }
 }
 export function booleanFromEnvironmentValue(rawValue: unknown): boolean | undefined;
 export function engineOptionsFrom({ engineConfiguration, env }?: {
@@ -24,6 +42,9 @@ export function engineOptionsFrom({ engineConfiguration, env }?: {
     isFastObjectGetEnabled: boolean;
     isSchemaControllerReuseEnabled: boolean;
     areDeclaredIndexesEnsured: boolean;
+    isQueryValueGuessingEnabled: boolean;
+    areDeclaredRouteParametersTyped: boolean;
+    areUndeclaredParameterRoutesRefused: boolean;
 };
 export const ROUTE_CACHE_BYPASS_SECRET_ENVIRONMENT_VARIABLE: "SERVABLE_CACHE_BYPASS_SECRET";
 export const ROUTE_CACHE_BYPASS_SECRET_MINIMUM_LENGTH: 16;

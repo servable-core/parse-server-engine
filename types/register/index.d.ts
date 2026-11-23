@@ -69,6 +69,10 @@ declare function _default({ servableConfig }: {
         isTransaction(value: any): boolean;
     };
     Route: {
+        undeclaredParameterRoutes: () => {
+            routeName: string;
+            doesSeemToReadParameters: boolean;
+        }[];
         define(options: any): Promise<any[]>;
     };
     Jobs: {

@@ -2,7 +2,8 @@ import express from "express";
 import { applyTrustProxy } from "./trustProxy.js";
 import compression from 'compression';
 // import bodyParser from 'body-parser'
-import qs from 'qs';
+import { createQueryParser } from '../register/route/parameters/queryString.js';
+import engineOptionsFrom from '../options/index.js';
 import cookieParser from "cookie-parser";
 import cors from 'cors';
 
@@ -143,45 +144,11 @@ export default async ({ servableConfig }) => {
     parameterLimit: 1000000
   }))
 
-  const numberRegex = /^-?\d+(\.\d+)?$/
-
-  app.set('query parser',
-    (str) => qs.parse(
-      str,
-      {
-        allowDots: true,
-        decoder: (str, defaultDecoder, charset, type) => {
-          // const val = defaultDecoder(str, defaultDecoder, charset, type);
-          // if (/^\d+$/.test(val)) {
-          //   return Number(val);
-          // }
-          // return val;
-          // `type` ('key' | 'value') is qs's own outer decoder callback parameter, not part of
-          // defaultDecoder's signature - it only takes (str, decoder, charset). Passing it
-          // through was harmless (JS ignores extra args) but wrong; dropped (found via checkJs,
-          // lucide/PEAKUB DX initiative).
-          const val = defaultDecoder(str, defaultDecoder, charset);
-
-          // Only convert if it looks like a number
-          if (typeof val === 'string' && numberRegex.test(val)) {
-            const num = Number(val);
-            // Ensure not NaN
-            if (!Number.isNaN(num)) {
-              return num;
-            }
-          }
-
-          if (typeof val === 'string' && (val === 'false')) {
-            return false
-          }
-
-          if (typeof val === 'string' && (val === 'true')) {
-            return true
-          }
-
-          return val;
-        }
-      }))
+  // `request.query` everywhere on this app: parsed with `allowDots`, its values guessed (number-looking text a number,
+  // `true`/`false` booleans) while the engine option `isQueryValueGuessingEnabled` is on, else the text as sent. A route's
+  // handler gets its parameters read from the query string again, as the route declares them (register/route/parameters/).
+  const { isQueryValueGuessingEnabled } = engineOptionsFrom({ engineConfiguration: servableConfig.configuration?.config?.engine })
+  app.set('query parser', createQueryParser({ isQueryValueGuessingEnabled }))
 
   return app
 }
