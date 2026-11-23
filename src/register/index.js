@@ -6,6 +6,7 @@ import createTransaction from './transaction/index.js'
 import Query from './query/index.js'
 import createObject from './object/index.js'
 import createTyped from './typed/index.js'
+import createIndexes, { adapterResolverFor } from '../indexes/index.js'
 
 ParseServer.S3Adapter
 
@@ -30,7 +31,14 @@ export default async ({ servableConfig }) => {
     Transaction,
     Route: route({ servableConfig }),
     Jobs: jobs({ servableConfig }),
-    Typed: createTyped({ ObjectClass, QueryClass: Query })
+    Typed: createTyped({ ObjectClass, QueryClass: Query }),
+    // Indexes Parse's schema cannot make, made through the storage adapter in the background (indexes/index.js):
+    // `Servable.App.Indexes.ensure({ className, name, keys, isUnique, isSparse, partialFilter, fieldTypes })`.
+    Indexes: {
+      ensure: createIndexes({
+        resolveAdapter: adapterResolverFor(() => /** @type {any} */ (globalThis).Parse?.applicationId ?? servableConfig?.envs?.appID),
+      }).ensure,
+    },
   })
 }
 

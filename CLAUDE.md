@@ -37,3 +37,11 @@ Apps that ran an older `@servable/server` and still have state in a separate uti
 `setConfigurations/adapt.js` no longer builds `configuration.lock` (its only content was the utils URI). The unused `agenda` dependency was removed; `Servable.App.Jobs` uses `@hokify/agenda` against the engine database (`configuration.config.parse.databaseURI`), unrelated to the utils database.
 
 Tests: `tests/unit/stateStore.test.js` (URI resolution, fail-closed import, no MongoDB) and `tests/integration/stateStore.test.js` (real MongoDB: floor never lowers under interleaved/concurrent writers, boot-state upserts, import idempotency and precedence). The integration test uses `SERVABLE_TEST_DATABASE_URI`, defaulting to a scratch MongoDB on `127.0.0.1:27018` (`root`/`DATABASE_PASSWORD_TO_CHANGE`), and skips when none is reachable — start a throwaway `mongo:7.0` for it rather than pointing it at a shared dev database.
+
+## Engine options, patches and ensured indexes (2026-11-23)
+
+Design note: `docs/engine-options-and-ensured-indexes.md`. In short:
+- `src/options/index.js`: the engine's options, `servableConfig.configuration.config.engine.{isFastObjectGetEnabled, isSchemaControllerReuseEnabled, areDeclaredIndexesEnsured}`, each overridden by its environment variable when it says on/off (`PARSE_FAST_OBJECT_GET`, `PARSE_SCHEMA_CONTROLLER_REUSE`, `SERVABLE_ENSURE_DECLARED_INDEXES`).
+- `src/patches/`: changes to Parse's own behaviour, installed by `launch` right after `ParseServer.start()`, never failing the boot. A new one comes with its option and a test against the real SDK / Parse Server.
+- `src/indexes/`: `Servable.App.Indexes.ensure` and the schema's `ensuredIndexes`, made after boot one at a time, never awaited, never dropped, through Parse's MongoDB adapter with Parse's own options (so an index Parse made before is found identical). `launch` strips `ensuredIndexes` from what Parse Server receives.
+- Tests: `tests/unit/{fastObjectGet,reuseSchemaController,enginePatches,indexes}.test.js`; against a real MongoDB (scratch, 27018): `tests/integration/{indexes,launch}.test.js`. The launch test mounts Parse Server on an Express app that never listens.

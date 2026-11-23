@@ -74,6 +74,26 @@ declare function _default({ servableConfig }: {
     Jobs: {
         define(payload: any): Promise<void>;
     };
+    Typed: {
+        object: (className: string) => any;
+        query: (className: string) => any;
+    };
+    Indexes: {
+        ensure: ({ className, name, keys, isUnique, isSparse, partialFilter, fieldTypes }: {
+            className: string;
+            name: string;
+            keys: Record<string, 1 | -1>;
+            isUnique?: boolean;
+            isSparse?: boolean;
+            partialFilter?: Record<string, any>;
+            fieldTypes?: Record<string, any>;
+        }) => Promise<{
+            isEnsured: boolean;
+            className: string;
+            name: string;
+            reason?: string;
+        }>;
+    };
     Utils: typeof import("./parse/utils/index.js");
 }>;
 export default _default;
