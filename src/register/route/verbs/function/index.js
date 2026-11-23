@@ -20,7 +20,8 @@ export default async ({
       url,
       // _cache({ cache: options.cache }),
       rateLimiter({
-        rateLimiting: options.rateLimiting
+        rateLimiting: options.rateLimiting,
+        routeKey: `post:${url}`
       }),
       bodyParser.raw({
         type: (options.request && options.request.type) ? options.request.type : 'application/json'

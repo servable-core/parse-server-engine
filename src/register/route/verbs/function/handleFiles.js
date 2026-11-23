@@ -14,7 +14,7 @@ import uriFromStorage from './lib/urifromstorage.js'
  * @param {any} props.options - a route's full options object (also forwarded whole to
  *   `processFunction`, which reads `.handler` itself); only `.files`/`.rateLimiting`/`.request`
  *   are read directly here.
- * @param {(props: { rateLimiting: any }) => import('express').RequestHandler} props.rateLimiter
+ * @param {(props: { rateLimiting: any, routeKey?: string }) => import('express').RequestHandler} props.rateLimiter
  * @param {any} [props.servableArguments]
  */
 export default async ({
@@ -99,7 +99,8 @@ export default async ({
   Servable.AppNative.post(
     url,
     rateLimiter({
-      rateLimiting: options.rateLimiting
+      rateLimiting: options.rateLimiting,
+      routeKey: `post:${url}`
     }),
     upload.array('files'),
     bodyParser.raw({

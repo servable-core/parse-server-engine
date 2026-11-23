@@ -55,7 +55,7 @@ const normalizeRequestUrl = (rawUrl) => {
   }
 }
 
-const getRedisClient = async ({ redisUrl }) => {
+export const getRedisClient = async ({ redisUrl }) => {
   if (redisClient) {
     return redisClient
   }

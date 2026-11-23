@@ -41,7 +41,8 @@ export default ({ servableConfig }) => {
             __url,
             _cache({ cache: options.cache }),
             _rateLimiter({
-              rateLimiting: options.rateLimiting
+              rateLimiting: options.rateLimiting,
+              routeKey: `${method.toLowerCase()}:${__url}`
             }),
             async (request, response, next) => {
               await processHttp({
@@ -60,7 +61,8 @@ export default ({ servableConfig }) => {
             __url,
             _cache({ cache: options.cache }),
             _rateLimiter({
-              rateLimiting: options.rateLimiting
+              rateLimiting: options.rateLimiting,
+              routeKey: `${method.toLowerCase()}:${__url}`
             }),
             async (request, response, next) => {
               await processHttp({
@@ -79,7 +81,8 @@ export default ({ servableConfig }) => {
             __url,
             _cache({ cache: options.cache }),
             _rateLimiter({
-              rateLimiting: options.rateLimiting
+              rateLimiting: options.rateLimiting,
+              routeKey: `${method.toLowerCase()}:${__url}`
             }),
             async (request, response, next) => {
               await processHttp({
@@ -97,7 +100,8 @@ export default ({ servableConfig }) => {
           Servable.AppNative.post(
             __url,
             _rateLimiter({
-              rateLimiting: options.rateLimiting
+              rateLimiting: options.rateLimiting,
+              routeKey: `${method.toLowerCase()}:${__url}`
             }),
             bodyParser.raw({
               type: _request.type ? _request.type : 'application/json'
@@ -118,7 +122,8 @@ export default ({ servableConfig }) => {
           Servable.AppNative.put(
             __url,
             _rateLimiter({
-              rateLimiting: options.rateLimiting
+              rateLimiting: options.rateLimiting,
+              routeKey: `${method.toLowerCase()}:${__url}`
             }),
             bodyParser.raw({
               type: _request.type ? _request.type : 'application/json'
@@ -139,7 +144,8 @@ export default ({ servableConfig }) => {
           Servable.AppNative.patch(
             __url,
             _rateLimiter({
-              rateLimiting: options.rateLimiting
+              rateLimiting: options.rateLimiting,
+              routeKey: `${method.toLowerCase()}:${__url}`
             }),
             bodyParser.raw({
               type: _request.type ? _request.type : 'application/json'
@@ -160,7 +166,8 @@ export default ({ servableConfig }) => {
           Servable.AppNative.delete(
             __url,
             _rateLimiter({
-              rateLimiting: options.rateLimiting
+              rateLimiting: options.rateLimiting,
+              routeKey: `${method.toLowerCase()}:${__url}`
             }),
             bodyParser.raw({
               type: _request.type ? _request.type : 'application/json'
@@ -181,7 +188,8 @@ export default ({ servableConfig }) => {
           Servable.AppNative.options(
             __url,
             _rateLimiter({
-              rateLimiting: options.rateLimiting
+              rateLimiting: options.rateLimiting,
+              routeKey: `${method.toLowerCase()}:${__url}`
             }),
             bodyParser.raw({
               type: _request.type ? _request.type : 'application/json'
@@ -203,7 +211,8 @@ export default ({ servableConfig }) => {
             __url,
             _cache({ cache: options.cache }),
             _rateLimiter({
-              rateLimiting: options.rateLimiting
+              rateLimiting: options.rateLimiting,
+              routeKey: `${method.toLowerCase()}:${__url}`
             }),
             async (request, response, next) => {
               await processHttp({
