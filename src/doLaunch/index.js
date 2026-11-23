@@ -2,8 +2,26 @@ import { ParseServer } from "parse-server"
 import _path from "path"
 import { fileURLToPath } from "url"
 import { dirname } from "path"
+import { controlTheMigrationOf } from "../schemaMigration/index.js"
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
+
+// How Parse Server's schema migration treats the definitions. Part of the migration's hash (schemaMigration/).
+export const PARSE_SCHEMA_MIGRATION_OPTIONS = Object.freeze({
+  // Parse Schema API will be disabled
+  // If you need to update schemas Parse server
+  // need to be updated and deployed (CI/CD strategy)
+  lockSchemas: true,
+  // If true, Parse Server will delete non defined Classes from
+  // the database. (Core classes like Role, User are never deleted)
+  strict: false,
+  // If true, a field type change, the changed field is deleted
+  // from the database (all data in this field will be deleted)
+  // and then create the field with the new type
+  recreateModifiedFields: false,
+  // If true, Parse will delete non defined fields on a class. (Core fields are never deleted)
+  deleteExtraFields: false,
+})
 
 /**
  * Boots the real `parse-server` instance and mounts it onto the given Express `app`.
@@ -11,9 +29,11 @@ const __dirname = dirname(__filename)
  * @param {{ parse: Record<string, any> }} props.config - `servableConfig`; only `.parse` is read.
  * @param {() => any} [props.serverCloseComplete] - parse-server's own shutdown hook.
  * @param {import('express').Express} props.app
+ * @param {{ isSkipped: boolean, onCompleted?: () => void, onSkipped?: () => void }} [props.migrationControls] - whether
+ *   Parse's schema migration runs this boot, and who hears it completed (schemaMigration/).
  * @returns {Promise<any>} the mounted parse-server Express app (`server.app`).
  */
-export default async ({ config, serverCloseComplete, app }) => {
+export default async ({ config, serverCloseComplete, app, migrationControls }) => {
   const { parse: parseConfig } = config
   console.log('[PARSE_SERVER_ADAPTER]', '[DEBUG]', 'dolaunch>',
     // config,
@@ -21,19 +41,7 @@ export default async ({ config, serverCloseComplete, app }) => {
   const schema = {
 
     ...(parseConfig.schema ? parseConfig.schema : {}),
-    // Parse Schema API will be disabled
-    // If you need to update schemas Parse server
-    // need to be updated and deployed (CI/CD strategy)
-    lockSchemas: true,
-    // If true, Parse Server will delete non defined Classes from
-    // the database. (Core classes like Role, User are never deleted)
-    strict: false,
-    // If true, a field type change, the changed field is deleted
-    // from the database (all data in this field will be deleted)
-    // and then create the field with the new type
-    recreateModifiedFields: false,
-    // If true, Parse will delete non defined fields on a class. (Core fields are never deleted)
-    deleteExtraFields: false,
+    ...PARSE_SCHEMA_MIGRATION_OPTIONS,
 
     // LockSchemas: JSON.parse(process.env.SERVABLE_SCHEMA_LOCK_SCHEMAS) ? true : false,
     // strict: JSON.parse(process.env.SERVABLE_SCHEMA_STRICT) ? true : false,
@@ -76,6 +84,10 @@ export default async ({ config, serverCloseComplete, app }) => {
 
       console.log("[PARSE_SERVER_ADAPTER]", "---------------- 🥰 afterMigration 😍😍")
     }
+  }
+
+  if (migrationControls) {
+    controlTheMigrationOf(schema, migrationControls)
   }
 
   const options = {

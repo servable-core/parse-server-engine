@@ -36,6 +36,7 @@ export function createStateStoreForDb(db: any): {
         }) => Promise<any>;
     };
 };
+export function engineDatabaseOf(servableConfig?: Record<string, any>): Promise<import("mongodb").Db | null>;
 declare function _default({ servableConfig }?: {
     servableConfig?: Record<string, any>;
 }): Promise<ReturnType<typeof createStateStoreForDb>>;

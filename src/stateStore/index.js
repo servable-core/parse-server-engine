@@ -132,6 +132,21 @@ const connect = (uri) => {
 }
 
 /**
+ * The engine database, through the state store's own client: for the engine's own bookkeeping (schemaMigration/).
+ * Answers null when no URI is configured.
+ * @param {Record<string, any>} [servableConfig] - or anything with `configuration.config.parse.databaseURI`.
+ * @returns {Promise<import('mongodb').Db | null>}
+ */
+export const engineDatabaseOf = async (servableConfig) => {
+  const uri = resolveDatabaseURI(servableConfig)
+  if (!uri) {
+    return null
+  }
+  const client = await connect(uri)
+  return client.db()
+}
+
+/**
  * @param {object} [props]
  * @param {Record<string, any>} [props.servableConfig]
  * @returns {Promise<ReturnType<typeof createStateStoreForDb>>}

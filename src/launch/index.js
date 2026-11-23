@@ -2,6 +2,9 @@ import doLaunch from '../doLaunch/index.js'
 import engineOptionsFrom from '../options/index.js'
 import installTheEnginePatches from '../patches/index.js'
 import createIndexes, { adapterResolverFor, startEnsuringTheDeclaredIndexes } from '../indexes/index.js'
+import { engineDatabaseOf } from '../stateStore/index.js'
+import { PARSE_SCHEMA_MIGRATION_OPTIONS } from '../doLaunch/index.js'
+import { installTheMigrationControls, planTheSchemaMigration, recordTheCompletedMigration } from '../schemaMigration/index.js'
 
 // Replaces launchWithMigration/index.js and launchWithNoMigration/index.js - see
 // .docs/technical/unischema-plan.md. There is no more migrate/no-migrate branch to choose
@@ -23,6 +26,9 @@ import createIndexes, { adapterResolverFor, startEnsuringTheDeclaredIndexes } fr
 // patches (patches/, each behind its option) and starts making the schema's `ensuredIndexes`
 // (indexes/), in the background: never awaited, so an index build never holds the boot (the
 // 2026-10-23 outage). Parse itself never sees `ensuredIndexes`: they are not its schema.
+//
+// Parse's schema migration is skipped when neither the definitions nor the database's schema changed since the last
+// migration that completed (schemaMigration/, framework audit 2026-11-23 F4); `isSchemaMigrationForced` runs it anyway.
 
 /**
  * A class definition as Parse Server's schema option takes it: without the engine's own keys.
@@ -54,9 +60,42 @@ export default async ({ schema, configuration, app }) => {
     },
   }
 
-  const server = await doLaunch({ config, app })
-
   const engineOptions = engineOptionsFrom({ engineConfiguration: configuration.config.engine })
+
+  const migrationControlsInstallation = installTheMigrationControls()
+  const engineDatabase = await engineDatabaseOf({ configuration }).catch(() => null)
+  const collectionPrefix = config.parse.collectionPrefix || ''
+  const schemaMigrationPlan = await planTheSchemaMigration({
+    db: engineDatabase,
+    definitions,
+    schemaOptions: PARSE_SCHEMA_MIGRATION_OPTIONS,
+    collectionPrefix,
+    isForced: engineOptions.isSchemaMigrationForced,
+    areControlsInstalled: migrationControlsInstallation.isInstalled,
+  })
+  let hasTheMigrationCompleted = false
+  const startedAt = Date.now()
+  const server = await doLaunch({
+    config,
+    app,
+    migrationControls: {
+      isSkipped: !schemaMigrationPlan.isMigrationRun,
+      onCompleted: () => { hasTheMigrationCompleted = true },
+    },
+  })
+  const recording = schemaMigrationPlan.isMigrationRun
+    ? await recordTheCompletedMigration({ db: engineDatabase, plan: schemaMigrationPlan, hasCompleted: hasTheMigrationCompleted, collectionPrefix })
+    : { isRecorded: false, reason: 'skipped' }
+  console.info('[ENGINE] schema migration', {
+    decision: schemaMigrationPlan.isMigrationRun ? (hasTheMigrationCompleted ? 'ran' : 'ran, not completed') : 'skipped',
+    reason: schemaMigrationPlan.reason,
+    isRecorded: recording.isRecorded,
+    ...(recording.isRecorded ? { hasChangedNothing: recording.hasChangedNothing } : {}),
+    ...(recording.isRecorded || !schemaMigrationPlan.isMigrationRun ? {} : { notRecordedBecause: recording.reason }),
+    ...(migrationControlsInstallation.isInstalled ? {} : { controls: migrationControlsInstallation.reason }),
+    parseStartMilliseconds: Date.now() - startedAt,
+  })
+
   await installTheEnginePatches({ engineOptions })
   startEnsuringTheDeclaredIndexes({
     indexes: createIndexes({
