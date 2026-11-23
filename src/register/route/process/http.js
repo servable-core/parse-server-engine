@@ -1,5 +1,6 @@
 import requestAdapter from '../adapters/request.js'
 import { buildParamsWithTraceContext } from '../lib/traceContext.js'
+import { markAnswerAsAnError } from '../cache/lib/cachedAnswer.js'
 
 export default async ({
   servableArguments,
@@ -87,6 +88,9 @@ export default async ({
     }
     // next(a)
     // response.send(a)
+    // The status is the error's code, a Parse code as often as an HTTP one, and several Parse codes are in the 200s
+    // (209 "invalid session token"): marked, so the route cache never keeps it as a success (cache/lib/cachedAnswer.js).
+    markAnswerAsAnError(response)
     response.status(a.code).json({ error: a.message })
   }
 }

@@ -1,89 +1,52 @@
 import mcache from 'memory-cache'
-import getSessionTokenFromRequest from '../lib/getSessionTokenFromRequest.js'
+import routeCacheKeyOf from '../lib/routeCacheKey.js'
+import isRouteCacheBypassedFor from '../lib/bypass.js'
+import { keepTheAnswerOf, replayAnswer } from '../lib/cachedAnswer.js'
 
-const CACHE_ENTRY_KEY = '__servable_cache_entry__'
+// The route cache in this process's memory. Same rules as the Redis store (../redis/index.js): only successes are
+// kept, with their status and Content-Type, and replayed as they were sent; the key never holds a session token;
+// only the server may skip it. The answer is kept as it is (no serialization at all). A window that is not a
+// positive number keeps nothing (`memory-cache` threw on 0 and kept forever when it had none).
 
-const STRIPPED_QUERY_KEYS = new Set([
-  'traceid',
-  'trace_id',
-  'tracespan',
-  'trace_span',
-  'traceparent',
-  'tracestate',
-  'spanid',
-  'span_id',
-  'parentspanid',
-  'parent_span_id',
-  'requestid',
-  'request_id',
-  'correlationid',
-  'correlation_id'
-])
+/**
+ * @param {object} props
+ * @param {number} props.duration - the window, in milliseconds.
+ * @param {string | null} [props.template]
+ * @param {string | null} [props.bypassSecret]
+ * @param {{ get: (key: string) => any, put: (key: string, value: any, ttl: number) => any }} [props.store]
+ */
+export default ({ duration, template, bypassSecret = null, store = mcache }) => {
+  const windowInMilliseconds = Number(duration)
+  const isWindowPositive = Number.isFinite(windowInMilliseconds) && windowInMilliseconds > 0
 
-const normalizeRequestUrl = (rawUrl) => {
-  const safeRawUrl = String(rawUrl || '')
-
-  try {
-    const parsed = new URL(safeRawUrl, 'http://localhost')
-    const keys = Array.from(new Set(Array.from(parsed.searchParams.keys())))
-
-    keys.forEach((key) => {
-      if (STRIPPED_QUERY_KEYS.has(String(key).toLowerCase())) {
-        parsed.searchParams.delete(key)
-      }
-    })
-
-    parsed.searchParams.sort()
-    const normalizedQuery = parsed.searchParams.toString()
-
-    return normalizedQuery
-      ? `${parsed.pathname}?${normalizedQuery}`
-      : parsed.pathname
-  } catch {
-    return safeRawUrl
-  }
-}
-
-export default ({ duration, template }) => {
   return (req, res, next) => {
-    const resetCache = req.headers['x-servable-reset-cache']
-    if (resetCache) {
+    if (isRouteCacheBypassedFor({ request: req, bypassSecret })) {
       next()
       return
     }
 
-    const normalizedUrl = normalizeRequestUrl(req.originalUrl || req.url)
-    let key = '__express__' + normalizedUrl
-    if (String(template || '').trim().toLowerCase() === 'userexists') {
-      const sessionToken = getSessionTokenFromRequest(req)
-      if (!sessionToken) {
-        next()
-        return
-      }
-      key += sessionToken
+    const key = routeCacheKeyOf({ request: req, template })
+    if (!key) {
+      next()
+      return
     }
 
-    let cachedEntry = mcache.get(key)
-    if (cachedEntry && cachedEntry[CACHE_ENTRY_KEY]) {
-      res.send(cachedEntry.body)
+    const answer = store.get(key)
+    // An entry an older engine kept (the whole body, whatever its status) has no status: never replayed.
+    if (answer && Number(answer.status) >= 200 && Number(answer.status) < 300 && 'body' in answer) {
+      replayAnswer({ response: res, answer })
       return
     }
-    if (cachedEntry !== null && cachedEntry !== undefined) {
-      // Backward compatibility for entries stored before envelope format.
-      res.send(cachedEntry)
-      return
-    } else {
-      res.sendResponse = res.send
-      res.send = (body) => {
-        const ttl = Number(duration)
-        const ttlMs = Number.isFinite(ttl) && ttl >= 0 ? ttl : undefined
-        mcache.put(key, {
-          [CACHE_ENTRY_KEY]: true,
-          body
-        }, ttlMs)
-        res.sendResponse(body)
-      }
-      next()
+
+    if (isWindowPositive) {
+      keepTheAnswerOf({
+        response: res,
+        keepAnswer: ({ status, contentType, body }) => {
+          store.put(key, { status, contentType, body }, windowInMilliseconds)
+        },
+      })
     }
+
+    next()
   }
 }

@@ -94,6 +94,13 @@ declare function _default({ servableConfig }: {
             reason?: string;
         }>;
     };
+    SessionInvalidations: {
+        subscribe: (listener: (invalidation: SessionInvalidation) => void) => Promise<{
+            isReported: boolean;
+            reason?: string;
+            unsubscribe: () => void;
+        }>;
+    };
     Utils: typeof import("./parse/utils/index.js");
 }>;
 export default _default;

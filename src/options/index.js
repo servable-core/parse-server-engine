@@ -52,4 +52,38 @@ export const engineOptionsFrom = ({ engineConfiguration = {}, env = process.env 
   return options
 }
 
+// The route cache's bypass secret (register/route/cache/lib/bypass.js): the value `x-servable-reset-cache` must carry
+// for a request to skip the route cache over HTTP. Not a switch, so not in ENGINE_OPTIONS:
+//   routeCacheBypassSecret          SERVABLE_CACHE_BYPASS_SECRET       none  the environment wins over the app's value
+// None (the default) means no HTTP caller can skip the cache; code in the process still can, with the request flag.
+// A value shorter than ROUTE_CACHE_BYPASS_SECRET_MINIMUM_LENGTH is refused (logged once, treated as none): a short
+// secret would be guessed.
+export const ROUTE_CACHE_BYPASS_SECRET_ENVIRONMENT_VARIABLE = 'SERVABLE_CACHE_BYPASS_SECRET'
+export const ROUTE_CACHE_BYPASS_SECRET_MINIMUM_LENGTH = 16
+
+let isShortBypassSecretReported = false
+
+/**
+ * @param {object} [props]
+ * @param {Record<string, any>} [props.engineConfiguration] - `servableConfig.configuration.config.engine`.
+ * @param {Record<string, string | undefined>} [props.env]
+ * @returns {string | null}
+ */
+export const routeCacheBypassSecretFrom = ({ engineConfiguration = {}, env = process.env } = {}) => {
+  const fromEnvironment = String(env?.[ROUTE_CACHE_BYPASS_SECRET_ENVIRONMENT_VARIABLE] ?? '').trim()
+  const fromTheApp = typeof engineConfiguration?.routeCacheBypassSecret === 'string' ? engineConfiguration.routeCacheBypassSecret.trim() : ''
+  const secret = fromEnvironment || fromTheApp
+  if (!secret) {
+    return null
+  }
+  if (secret.length < ROUTE_CACHE_BYPASS_SECRET_MINIMUM_LENGTH) {
+    if (!isShortBypassSecretReported) {
+      isShortBypassSecretReported = true
+      console.error('[ENGINE] [route cache] bypass secret refused: shorter than', ROUTE_CACHE_BYPASS_SECRET_MINIMUM_LENGTH, 'characters; no HTTP caller can skip the cache')
+    }
+    return null
+  }
+  return secret
+}
+
 export default engineOptionsFrom

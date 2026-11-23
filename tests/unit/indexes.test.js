@@ -7,6 +7,7 @@ import MongoCollectionModule from 'parse-server/lib/Adapters/Storage/Mongo/Mongo
 import MongoTransform from 'parse-server/lib/Adapters/Storage/Mongo/MongoTransform.js'
 import { storageIndexFrom, problemsOfTheDeclaration } from '../../src/indexes/storageIndex.js'
 import createIndexes, { startEnsuringTheDeclaredIndexes } from '../../src/indexes/index.js'
+import { ENGINE_OWNED_ENSURED_INDEXES } from '../../src/indexes/engineOwnedIndexes.js'
 import { parseDefinitionOf } from '../../src/launch/index.js'
 
 const MongoStorageAdapter = MongoStorageAdapterModule.MongoStorageAdapter ?? MongoStorageAdapterModule.default ?? MongoStorageAdapterModule
@@ -173,20 +174,24 @@ describe('the declared indexes at boot', () => {
     expect(console.info).toHaveBeenCalledWith('[ENGINE] [indexes]', 'declared indexes ensured', expect.objectContaining({ ensured: 2, failed: 1, failedIndexes: ['Snippet._bad_'] }))
   })
 
-  test('are started without the boot waiting for them, and not at all when switched off or none is declared', async () => {
+  test('are started without the boot waiting for them, with the engine\'s own, and not at all when switched off', async () => {
     let releaseTheBuild
     const ensureTheDeclared = jest.fn(() => new Promise((resolve) => { releaseTheBuild = resolve }))
     const run = startEnsuringTheDeclaredIndexes({ indexes: { ensureTheDeclared }, classes, areDeclaredIndexesEnsured: true })
     // The boot carries on while the build has not finished.
     expect(run).toBeInstanceOf(Promise)
     await Promise.resolve()
-    expect(ensureTheDeclared).toHaveBeenCalledWith({ classes: [classes[0], classes[2]] })
+    expect(ensureTheDeclared).toHaveBeenCalledWith({ classes: [classes[0], classes[2], ...ENGINE_OWNED_ENSURED_INDEXES] })
     releaseTheBuild({ ensured: [], failed: [] })
     await expect(run).resolves.toEqual({ ensured: [], failed: [] })
 
     expect(startEnsuringTheDeclaredIndexes({ indexes: { ensureTheDeclared }, classes, areDeclaredIndexesEnsured: false })).toBeNull()
-    expect(startEnsuringTheDeclaredIndexes({ indexes: { ensureTheDeclared }, classes: [classes[1]], areDeclaredIndexesEnsured: true })).toBeNull()
-    expect(ensureTheDeclared).toHaveBeenCalledTimes(1)
+    // An app that declares none still gets the engine's own indexes on Parse's system classes.
+    startEnsuringTheDeclaredIndexes({ indexes: { ensureTheDeclared }, classes: [classes[1]], areDeclaredIndexesEnsured: true })
+    await Promise.resolve()
+    expect(ensureTheDeclared).toHaveBeenLastCalledWith({ classes: ENGINE_OWNED_ENSURED_INDEXES })
+    expect(startEnsuringTheDeclaredIndexes({ indexes: { ensureTheDeclared }, classes: [classes[1]], areDeclaredIndexesEnsured: true, engineOwnedClasses: [] })).toBeNull()
+    expect(ensureTheDeclared).toHaveBeenCalledTimes(2)
     const failing = startEnsuringTheDeclaredIndexes({ indexes: { ensureTheDeclared: async () => { throw new Error('boom') } }, classes, areDeclaredIndexesEnsured: true })
     await expect(failing).resolves.toBeNull()
   })

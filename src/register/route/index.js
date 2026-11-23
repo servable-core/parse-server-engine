@@ -5,6 +5,7 @@ import processHttp from './process/http.js'
 import sanitizePath from 'path-sanitizer'
 // import uploadfile from "./verbs/uploadfile/index.js"
 import handleFunction from "./verbs/function/index.js"
+import { routeCacheBypassSecretFrom } from '../../options/index.js'
 
 export default ({ servableConfig }) => {
   const item = {}
@@ -31,6 +32,9 @@ export default ({ servableConfig }) => {
     } = options
 
 
+    // Read when the route is defined (after the boot adapted the configuration), so every route of the app uses the
+    // same secret; it is an option of the engine (options/index.js), the environment winning.
+    const bypassSecret = routeCacheBypassSecretFrom({ engineConfiguration: servableConfig?.configuration?.config?.engine })
     const urls = paths ? paths : (path ? [path] : (url ? [url] : []))
     return Promise.all(urls.map(async _path => {
       switch (method.toLowerCase()) {
@@ -39,7 +43,7 @@ export default ({ servableConfig }) => {
           __url = `/${sanitizePath.default(__url)}`.toLowerCase()
           Servable.AppNative.get(
             __url,
-            _cache({ cache: options.cache }),
+            _cache({ cache: options.cache, bypassSecret }),
             _rateLimiter({
               rateLimiting: options.rateLimiting,
               routeKey: `${method.toLowerCase()}:${__url}`
@@ -59,7 +63,7 @@ export default ({ servableConfig }) => {
           __url = `/${sanitizePath.default(__url)}`.toLowerCase()
           Servable.AppNative.head(
             __url,
-            _cache({ cache: options.cache }),
+            _cache({ cache: options.cache, bypassSecret }),
             _rateLimiter({
               rateLimiting: options.rateLimiting,
               routeKey: `${method.toLowerCase()}:${__url}`
@@ -79,7 +83,7 @@ export default ({ servableConfig }) => {
           __url = `/${sanitizePath.default(__url)}`.toLowerCase()
           Servable.AppNative.head(
             __url,
-            _cache({ cache: options.cache }),
+            _cache({ cache: options.cache, bypassSecret }),
             _rateLimiter({
               rateLimiting: options.rateLimiting,
               routeKey: `${method.toLowerCase()}:${__url}`
@@ -209,7 +213,7 @@ export default ({ servableConfig }) => {
           __url = `/${sanitizePath.default(__url)}`.toLowerCase()
           Servable.AppNative.trace(
             __url,
-            _cache({ cache: options.cache }),
+            _cache({ cache: options.cache, bypassSecret }),
             _rateLimiter({
               rateLimiting: options.rateLimiting,
               routeKey: `${method.toLowerCase()}:${__url}`

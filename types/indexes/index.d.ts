@@ -29,7 +29,7 @@ export function createIndexes({ resolveAdapter, loadTransformKey, declaredClasse
     }>;
 };
 export function adapterResolverFor(applicationIdOf: () => string | undefined): () => Promise<any>;
-export function startEnsuringTheDeclaredIndexes({ indexes, classes, areDeclaredIndexesEnsured }: {
+export function startEnsuringTheDeclaredIndexes({ indexes, classes, areDeclaredIndexesEnsured, engineOwnedClasses }: {
     indexes: {
         ensureTheDeclared: (props: {
             classes: any[];
@@ -37,5 +37,6 @@ export function startEnsuringTheDeclaredIndexes({ indexes, classes, areDeclaredI
     };
     classes: any[];
     areDeclaredIndexesEnsured: boolean;
+    engineOwnedClasses?: any[];
 }): Promise<any> | null;
 export default createIndexes;

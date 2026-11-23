@@ -7,6 +7,7 @@ import Query from './query/index.js'
 import createObject from './object/index.js'
 import createTyped from './typed/index.js'
 import createIndexes, { adapterResolverFor } from '../indexes/index.js'
+import { createSessionInvalidations } from '../sessionInvalidations/index.js'
 
 ParseServer.S3Adapter
 
@@ -39,6 +40,12 @@ export default async ({ servableConfig }) => {
         resolveAdapter: adapterResolverFor(() => /** @type {any} */ (globalThis).Parse?.applicationId ?? servableConfig?.envs?.appID),
       }).ensure,
     },
+    // What a session token resolves to may have changed (a sign-out, a revoked session, a saved user):
+    // `Servable.App.SessionInvalidations.subscribe(listener)`, for @servable/server's session-user cache
+    // (sessionInvalidations/index.js).
+    SessionInvalidations: createSessionInvalidations({
+      applicationIdOf: () => /** @type {any} */ (globalThis).Parse?.applicationId ?? servableConfig?.envs?.appID,
+    }),
   })
 }
 

@@ -1,4 +1,5 @@
 import { storageIndexFrom } from './storageIndex.js'
+import { ENGINE_OWNED_ENSURED_INDEXES, withTheEngineOwnedIndexes } from './engineOwnedIndexes.js'
 
 // Indexes Parse's schema cannot make (`Servable.App.Indexes`, and the `ensuredIndexes` a schema.json declares):
 // unique ones, ones with a partial filter, ones on a dotted path into an object, on `objectId` beside other keys, or
@@ -132,15 +133,18 @@ export const adapterResolverFor = (applicationIdOf) => async () => {
 }
 
 /**
- * Starts making every declared index, without waiting for it: what the boot calls.
+ * Starts making every declared index (the app's, and the engine's own on Parse's system classes), without waiting
+ * for it: what the boot calls.
  * @param {object} props
  * @param {{ ensureTheDeclared: (props: { classes: any[] }) => Promise<any> }} props.indexes
  * @param {any[]} props.classes
  * @param {boolean} props.areDeclaredIndexesEnsured
+ * @param {any[]} [props.engineOwnedClasses] - the engine's own declarations; for tests.
  * @returns {Promise<any> | null} the run, for whoever wants to follow it; null when switched off or nothing is declared.
  */
-export const startEnsuringTheDeclaredIndexes = ({ indexes, classes, areDeclaredIndexesEnsured }) => {
-  const declaringClasses = (classes || []).filter((declaredClass) => declaredClass?.ensuredIndexes && Object.keys(declaredClass.ensuredIndexes).length > 0)
+export const startEnsuringTheDeclaredIndexes = ({ indexes, classes, areDeclaredIndexesEnsured, engineOwnedClasses = ENGINE_OWNED_ENSURED_INDEXES }) => {
+  // The engine's own declarations on Parse's system classes (./engineOwnedIndexes.js) come with the app's.
+  const declaringClasses = withTheEngineOwnedIndexes(classes, engineOwnedClasses).filter((declaredClass) => declaredClass?.ensuredIndexes && Object.keys(declaredClass.ensuredIndexes).length > 0)
   if (declaringClasses.length === 0) {
     return null
   }

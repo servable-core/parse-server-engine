@@ -25,4 +25,10 @@ export function engineOptionsFrom({ engineConfiguration, env }?: {
     isSchemaControllerReuseEnabled: boolean;
     areDeclaredIndexesEnsured: boolean;
 };
+export const ROUTE_CACHE_BYPASS_SECRET_ENVIRONMENT_VARIABLE: "SERVABLE_CACHE_BYPASS_SECRET";
+export const ROUTE_CACHE_BYPASS_SECRET_MINIMUM_LENGTH: 16;
+export function routeCacheBypassSecretFrom({ engineConfiguration, env }?: {
+    engineConfiguration?: Record<string, any>;
+    env?: Record<string, string | undefined>;
+}): string | null;
 export default engineOptionsFrom;

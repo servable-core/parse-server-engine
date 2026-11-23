@@ -1,4 +1,8 @@
 import ParseServer from "parse-server"
+import { withSessionTokensHashedInKeys } from './sessionKeyHashing.js'
+
+// Parse's Redis cache adapter, with no session token in its key names (./sessionKeyHashing.js).
+const RedisCacheAdapterWithoutTokensInKeys = withSessionTokensHashedInKeys(ParseServer.RedisCacheAdapter)
 
 export default ({ payload }) => {
   if (!payload.redisCacheUri) {
@@ -12,7 +16,7 @@ export default ({ payload }) => {
 
   // Const redisOptions = { url: process.env.SERVABLE_REDIS_URL, db: process.env.SERVABLE_REDIS_DB }
   const redisOptions = { url: normalizedRedisCacheUri }
-  const engine = new ParseServer.RedisCacheAdapter(redisOptions)
+  const engine = new RedisCacheAdapterWithoutTokensInKeys(redisOptions)
   console.log("[@servable/parse-server-engine/setConfigurations/adapt.js] createCacheAdapter() → Redis cache adapter created")
 
   return engine

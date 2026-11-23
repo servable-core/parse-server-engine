@@ -1,26 +1,15 @@
 import { createClient } from 'redis'
-import getSessionTokenFromRequest from '../lib/getSessionTokenFromRequest.js'
+import routeCacheKeyOf from '../lib/routeCacheKey.js'
+import isRouteCacheBypassedFor from '../lib/bypass.js'
+import { answerOfRedisEntry, keepTheAnswerOf, redisEntryOf, replayAnswer } from '../lib/cachedAnswer.js'
 
-const CACHE_ENTRY_KEY = '__servable_cache_entry__'
+// The route cache in Redis (APP_REDIS_URI), shared by every pod. What is kept and how it is replayed:
+// ../lib/cachedAnswer.js; the key: ../lib/routeCacheKey.js; who may skip it: ../lib/bypass.js.
+// `duration` is the route's window in milliseconds; an entry lives that long from when it was written, and a window
+// that is not a positive number keeps nothing. Redis down or slow to connect: the route answers as if uncached.
+
 let redisClient
 let redisClientPromise
-
-const STRIPPED_QUERY_KEYS = new Set([
-  'traceid',
-  'trace_id',
-  'tracespan',
-  'trace_span',
-  'traceparent',
-  'tracestate',
-  'spanid',
-  'span_id',
-  'parentspanid',
-  'parent_span_id',
-  'requestid',
-  'request_id',
-  'correlationid',
-  'correlation_id'
-])
 
 const normalizeRedisUrl = (url) => {
   const raw = String(url || '').trim()
@@ -29,30 +18,6 @@ const normalizeRedisUrl = (url) => {
   }
 
   return raw.includes('://') ? raw : `redis://${raw}`
-}
-
-const normalizeRequestUrl = (rawUrl) => {
-  const safeRawUrl = String(rawUrl || '')
-
-  try {
-    const parsed = new URL(safeRawUrl, 'http://localhost')
-    const keys = Array.from(new Set(Array.from(parsed.searchParams.keys())))
-
-    keys.forEach((key) => {
-      if (STRIPPED_QUERY_KEYS.has(String(key).toLowerCase())) {
-        parsed.searchParams.delete(key)
-      }
-    })
-
-    parsed.searchParams.sort()
-    const normalizedQuery = parsed.searchParams.toString()
-
-    return normalizedQuery
-      ? `${parsed.pathname}?${normalizedQuery}`
-      : parsed.pathname
-  } catch {
-    return safeRawUrl
-  }
 }
 
 export const getRedisClient = async ({ redisUrl }) => {
@@ -90,86 +55,55 @@ export const getRedisClient = async ({ redisUrl }) => {
   return redisClientPromise
 }
 
-export default ({ duration, template, redisUrl = process.env.APP_REDIS_URI }) => {
+/**
+ * @param {object} props
+ * @param {number} props.duration - the window, in milliseconds.
+ * @param {string | null} [props.template]
+ * @param {string} [props.redisUrl]
+ * @param {string | null} [props.bypassSecret]
+ * @param {() => Promise<any>} [props.getClient] - for tests: the Redis client, else the shared one of `redisUrl`.
+ */
+export default ({ duration, template, redisUrl = process.env.APP_REDIS_URI, bypassSecret = null, getClient = () => getRedisClient({ redisUrl }) }) => {
+  const windowInMilliseconds = Number(duration)
+  const isWindowPositive = Number.isFinite(windowInMilliseconds) && windowInMilliseconds > 0
+
   return async (req, res, next) => {
-    const resetCache = req.headers['x-servable-reset-cache']
-    if (resetCache) {
+    if (isRouteCacheBypassedFor({ request: req, bypassSecret })) {
       next()
       return
     }
 
-    const client = await getRedisClient({ redisUrl })
+    const key = routeCacheKeyOf({ request: req, template })
+    if (!key) {
+      next()
+      return
+    }
+
+    const client = await getClient()
     if (!client) {
       next()
       return
     }
 
-    const normalizedUrl = normalizeRequestUrl(req.originalUrl || req.url)
-    let key = '__express__' + normalizedUrl
-    if (String(template || '').trim().toLowerCase() === 'userexists') {
-      const sessionToken = getSessionTokenFromRequest(req)
-      if (!sessionToken) {
-        next()
-        return
-      }
-      key += `_${sessionToken}`
-    }
-
     try {
-      const cachedValue = await client.get(key)
-      if (cachedValue !== null) {
-        try {
-          //console.log('[@servable/parse-server-engine/cache/redis] Cache hit for key:', key)
-          const cachedEntry = JSON.parse(cachedValue)
-          if (cachedEntry && cachedEntry[CACHE_ENTRY_KEY]) {
-            //console.log('[@servable/parse-server-engine/cache/redis] Cache entry valid for key:', key)
-            res.send(cachedEntry.body)
-            return
-          }
-          //console.log('[@servable/parse-server-engine/cache/redis] Cache entry invalid for key:', key)
-          res.send(cachedEntry)
-          return
-        } catch (error) {
-          console.error('[@servable/parse-server-engine/cache/redis] Failed to parse cache entry for key:', key, error)
-          res.send(cachedValue)
-          return
-        }
+      const answer = answerOfRedisEntry(await client.get(key))
+      if (answer) {
+        replayAnswer({ response: res, answer })
+        return
       }
     } catch (error) {
       console.error('[@servable/parse-server-engine/cache/redis] Failed to read cache', error)
     }
 
-    res.sendResponse = res.send
-    res.send = (body) => {
-      const ttl = Number(duration)
-      const ttlMs = Number.isFinite(ttl) && ttl >= 0 ? ttl : undefined
-
-      if (!(ttlMs > 0)) {
-        res.sendResponse(body)
-        return
-      }
-
-      let payload
-      try {
-        payload = JSON.stringify({
-          [CACHE_ENTRY_KEY]: true,
-          body
-        })
-        //console.log('[@servable/parse-server-engine/cache/redis] Caching response for key:', key, 'with TTL (ms):', ttlMs)
-      } catch (error) {
-        console.error('[@servable/parse-server-engine/cache/redis] Failed to serialize cache payload', error)
-        res.sendResponse(body)
-        return
-      }
-
-      //console.log('[@servable/parse-server-engine/cache/redis] Setting cache with expiration for key:', key)
-      client.set(key, payload, {
-        PX: ttlMs
-      }).catch((error) => {
-        console.error('[@servable/parse-server-engine/cache/redis] Failed to write cache', error)
+    if (isWindowPositive) {
+      keepTheAnswerOf({
+        response: res,
+        keepAnswer: (answer) => {
+          client.set(key, redisEntryOf(answer), { PX: windowInMilliseconds }).catch((error) => {
+            console.error('[@servable/parse-server-engine/cache/redis] Failed to write cache', error)
+          })
+        },
       })
-
-      res.sendResponse(body)
     }
 
     next()
