@@ -1,2 +1,2 @@
-declare function _default(request?: {}): any;
-export default _default;
+export function getSessionTokenFromRequest(request?: any): string | null;
+export default getSessionTokenFromRequest;

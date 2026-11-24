@@ -13,3 +13,7 @@ export function countTheRouteCacheStore({ routePath, storage, outcome }: {
     storage: string;
     outcome: string;
 }): void;
+export function countTheRouteCacheReaderCredential({ storage, credential }: {
+    storage: string;
+    credential: "session" | "bearer" | "session_and_bearer" | null;
+}): void;

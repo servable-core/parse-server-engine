@@ -1,7 +1,7 @@
 import memory from "./memory/index.js"
 import redis from "./redis/index.js"
 import empty from "../empty.js"
-import getSessionTokenFromRequest from "./lib/getSessionTokenFromRequest.js"
+import { isSignedInRequest } from "./lib/readerCredentials.js"
 
 const adaptStorage = (storage = '') => {
   const normalized = String(storage || '').trim().toLowerCase()
@@ -73,10 +73,10 @@ const buildMiddleware = ({ configuration, bypassSecret, routePath }) => {
   }
 }
 
-const isUserExists = (req) => {
-  const sessionToken = getSessionTokenFromRequest(req)
-  return Boolean(sessionToken)
-}
+// Signed in, for the templates: the request carries a session token or an access token as a bearer, the same rule as
+// the signed-in key (lib/readerCredentials.js), so a `userExists` configuration always has a key for the request it
+// is picked for, and a bearer-only request is never served the shared `userDoesNotExist` answer.
+const isUserExists = (req) => isSignedInRequest(req)
 
 const matchTemplate = ({ template, req }) => {
   const normalizedTemplate = String(template || '').trim().toLowerCase()

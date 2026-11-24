@@ -69,13 +69,25 @@ describeIfRedis('route cache and Parse cache keys (real Redis)', () => {
     expect(hit.headers['content-type']).toBe(miss.headers['content-type'])
     expect(Buffer.compare(hit.body, miss.body)).toBe(0)
     const keys = await client.keys(`__express__${PATH_PREFIX}/ok*`)
-    expect(keys).toEqual([`__express__${PATH_PREFIX}/ok_${hashedSessionTokenOf(TOKEN)}`])
+    expect(keys).toEqual([`__express__${PATH_PREFIX}/ok#s:${hashedSessionTokenOf(TOKEN)}.i:-`])
     const stored = await client.get(keys[0])
     expect(stored.endsWith(`\n${miss.body.toString()}`)).toBe(true)
     expect(Buffer.byteLength(stored) - miss.body.length).toBeLessThan(80)
     const ttl = await client.pTTL(keys[0])
     expect(ttl).toBeGreaterThan(55000)
     expect(ttl).toBeLessThanOrEqual(60000)
+  })
+
+  test('a bearer-only answer: written under the bearer\'s digest in its own namespace, never the token (Q1961 b)', async () => {
+    const ACCESS_TOKEN = 'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1MSJ9.c2lnbmF0dXJl'
+    const before = calls.ok
+    await get(server, `${PATH_PREFIX}/ok?reader=bearer`, { authorization: `Bearer ${ACCESS_TOKEN}` })
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    await get(server, `${PATH_PREFIX}/ok?reader=bearer`, { authorization: `Bearer ${ACCESS_TOKEN}` })
+    expect(calls.ok - before).toBe(1)
+    const keys = await client.keys(`__express__${PATH_PREFIX}/ok?reader=bearer*`)
+    expect(keys).toEqual([`__express__${PATH_PREFIX}/ok?reader=bearer#b:${hashedSessionTokenOf(ACCESS_TOKEN)}`])
+    expect(keys[0].includes(ACCESS_TOKEN.split('.')[2])).toBe(false)
   })
 
   test('an error is never written', async () => {

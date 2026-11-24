@@ -203,7 +203,7 @@ describe.each(Object.keys(STORES))('route cache, %s store', (storeName) => {
     await request(server, { headers: { cookie: `x-servable-session-token=${SESSION_TOKEN}` } })
     expect(calls.count).toBe(1)
     const keys = [...store.entries.keys()]
-    expect(keys).toEqual([`__express__/a_${hashedSessionTokenOf(SESSION_TOKEN)}`])
+    expect(keys).toEqual([`__express__/a#s:${hashedSessionTokenOf(SESSION_TOKEN)}.i:-`])
     expect(keys.some((key) => key.includes(SESSION_TOKEN) || key.includes(SESSION_TOKEN.slice(2)))).toBe(false)
     // Another session has its own entry.
     await request(server, { headers: { 'x-servable-session-token': 'r:another' } })

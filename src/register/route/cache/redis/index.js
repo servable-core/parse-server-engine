@@ -1,8 +1,9 @@
 import { createClient } from 'redis'
-import routeCacheKeyOf from '../lib/routeCacheKey.js'
+import routeCacheKeyOf, { isPerReaderTemplate } from '../lib/routeCacheKey.js'
+import { readerCredentialKindOf } from '../lib/readerCredentials.js'
 import isRouteCacheBypassedFor from '../lib/bypass.js'
 import { answerOfRedisEntry, keepTheAnswerOf, redisEntryOf, replayAnswer } from '../lib/cachedAnswer.js'
-import { countTheRouteCacheLookup, countTheRouteCacheStore, isTheBypassHeaderRefusedFor, routeCacheBypassOutcomeOf } from '../lib/routeCacheCounts.js'
+import { countTheRouteCacheLookup, countTheRouteCacheReaderCredential, countTheRouteCacheStore, isTheBypassHeaderRefusedFor, routeCacheBypassOutcomeOf } from '../lib/routeCacheCounts.js'
 
 // The route cache in Redis (APP_REDIS_URI), shared by every pod. What is kept and how it is replayed:
 // ../lib/cachedAnswer.js; the key: ../lib/routeCacheKey.js; who may skip it: ../lib/bypass.js.
@@ -82,6 +83,9 @@ export default ({ duration, template, redisUrl = process.env.APP_REDIS_URI, bypa
     }
 
     const key = routeCacheKeyOf({ request: req, template })
+    if (isPerReaderTemplate(template)) {
+      countTheRouteCacheReaderCredential({ storage: 'redis', credential: readerCredentialKindOf(req) })
+    }
     if (!key) {
       count('no_key')
       next()

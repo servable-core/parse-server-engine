@@ -1,11 +1,12 @@
 import mcache from 'memory-cache'
-import routeCacheKeyOf from '../lib/routeCacheKey.js'
+import routeCacheKeyOf, { isPerReaderTemplate } from '../lib/routeCacheKey.js'
+import { readerCredentialKindOf } from '../lib/readerCredentials.js'
 import isRouteCacheBypassedFor from '../lib/bypass.js'
 import { keepTheAnswerOf, replayAnswer } from '../lib/cachedAnswer.js'
-import { countTheRouteCacheLookup, countTheRouteCacheStore, isTheBypassHeaderRefusedFor, routeCacheBypassOutcomeOf } from '../lib/routeCacheCounts.js'
+import { countTheRouteCacheLookup, countTheRouteCacheReaderCredential, countTheRouteCacheStore, isTheBypassHeaderRefusedFor, routeCacheBypassOutcomeOf } from '../lib/routeCacheCounts.js'
 
 // The route cache in this process's memory. Same rules as the Redis store (../redis/index.js): only successes are
-// kept, with their status and Content-Type, and replayed as they were sent; the key never holds a session token;
+// kept, with their status and Content-Type, and replayed as they were sent; the key never holds a session or access token;
 // only the server may skip it. The answer is kept as it is (no serialization at all). A window that is not a
 // positive number keeps nothing (`memory-cache` threw on 0 and kept forever when it had none).
 
@@ -34,6 +35,9 @@ export default ({ duration, template, bypassSecret = null, store = mcache, route
     }
 
     const key = routeCacheKeyOf({ request: req, template })
+    if (isPerReaderTemplate(template)) {
+      countTheRouteCacheReaderCredential({ storage: 'inMemory', credential: readerCredentialKindOf(req) })
+    }
     if (!key) {
       count('no_key')
       next()
