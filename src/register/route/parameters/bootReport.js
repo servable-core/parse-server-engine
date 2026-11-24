@@ -90,3 +90,71 @@ export const reportTheUndeclaredParameterRoutesSoon = ({ writeLine = (line) => c
   }, SUMMARY_DELAY_IN_MILLISECONDS)
   summaryTimer.unref?.()
 }
+
+// Production proof 3.8 (.docs/technical/production-proof-instrumentation-2026-11-23.md): ONE summary line per boot, always (the
+// line above only when a route declares nothing), its fields in a leading object, written once the definitions pause:
+//   [ENGINE] [route parameters] summary { proof: 'route-parameters', routes, declared, undeclared, undeclaredReading,
+//     wildcardGuessed, isQueryValueGuessingEnabled, areDeclaredRouteParametersTyped }
+
+const definedRouteCounts = { routes: 0, declared: 0, undeclaredReading: 0, wildcardGuessed: 0 }
+/** @type {NodeJS.Timeout | null} */
+let routeParametersSummaryTimer = null
+
+/**
+ * Records one route defined (route/index.js).
+ * @param {{ isDeclared: boolean, isWildcardGuessed?: boolean, doesSeemToReadParameters?: boolean }} props
+ */
+export const recordDefinedRouteParameters = ({ isDeclared, isWildcardGuessed = false, doesSeemToReadParameters = false }) => {
+  definedRouteCounts.routes += 1
+  if (isDeclared) {
+    definedRouteCounts.declared += 1
+  } else if (doesSeemToReadParameters) {
+    definedRouteCounts.undeclaredReading += 1
+  }
+  if (isWildcardGuessed) {
+    definedRouteCounts.wildcardGuessed += 1
+  }
+}
+
+/**
+ * The summary's fields. Pure but for the counts recorded.
+ * @param {{ isQueryValueGuessingEnabled: boolean, areDeclaredRouteParametersTyped: boolean }} props
+ */
+export const routeParametersSummaryOf = ({ isQueryValueGuessingEnabled, areDeclaredRouteParametersTyped }) => ({
+  proof: 'route-parameters',
+  routes: definedRouteCounts.routes,
+  declared: definedRouteCounts.declared,
+  undeclared: definedRouteCounts.routes - definedRouteCounts.declared,
+  undeclaredReading: definedRouteCounts.undeclaredReading,
+  wildcardGuessed: definedRouteCounts.wildcardGuessed,
+  isQueryValueGuessingEnabled: Boolean(isQueryValueGuessingEnabled),
+  areDeclaredRouteParametersTyped: Boolean(areDeclaredRouteParametersTyped),
+})
+
+/**
+ * Writes the summary once the route definitions pause (a timer that never keeps the process alive).
+ * @param {{ isQueryValueGuessingEnabled: boolean, areDeclaredRouteParametersTyped: boolean, logger?: { info: (...args: any[]) => void } }} props
+ */
+export const reportTheRouteParametersSummarySoon = ({ isQueryValueGuessingEnabled, areDeclaredRouteParametersTyped, logger = console }) => {
+  if (routeParametersSummaryTimer) {
+    clearTimeout(routeParametersSummaryTimer)
+  }
+  routeParametersSummaryTimer = setTimeout(() => {
+    routeParametersSummaryTimer = null
+    try {
+      logger.info(routeParametersSummaryOf({ isQueryValueGuessingEnabled, areDeclaredRouteParametersTyped }), '[ENGINE] [route parameters] summary')
+    } catch (error) {
+      // A boot line never fails a boot.
+    }
+  }, SUMMARY_DELAY_IN_MILLISECONDS)
+  routeParametersSummaryTimer.unref?.()
+}
+
+/** Forgets the routes counted (tests). */
+export const forgetDefinedRouteParameters = () => {
+  Object.assign(definedRouteCounts, { routes: 0, declared: 0, undeclaredReading: 0, wildcardGuessed: 0 })
+  if (routeParametersSummaryTimer) {
+    clearTimeout(routeParametersSummaryTimer)
+    routeParametersSummaryTimer = null
+  }
+}

@@ -1,9 +1,10 @@
 export const ERROR_ANSWER_LOCALS_FLAG: "isAnErrorAnswer";
 export function isAnswerCacheable(response: any): boolean;
 export function markAnswerAsAnError(response: any): void;
-export function keepTheAnswerOf({ response, keepAnswer }: {
+export function keepTheAnswerOf({ response, keepAnswer, onAnswerNotKept }: {
     response: any;
     keepAnswer: (answer: CachedAnswer) => void;
+    onAnswerNotKept?: () => void;
 }): void;
 export function replayAnswer({ response, answer }: {
     response: any;

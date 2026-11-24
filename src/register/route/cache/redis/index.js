@@ -2,6 +2,7 @@ import { createClient } from 'redis'
 import routeCacheKeyOf from '../lib/routeCacheKey.js'
 import isRouteCacheBypassedFor from '../lib/bypass.js'
 import { answerOfRedisEntry, keepTheAnswerOf, redisEntryOf, replayAnswer } from '../lib/cachedAnswer.js'
+import { countTheRouteCacheLookup, countTheRouteCacheStore, isTheBypassHeaderRefusedFor, routeCacheBypassOutcomeOf } from '../lib/routeCacheCounts.js'
 
 // The route cache in Redis (APP_REDIS_URI), shared by every pod. What is kept and how it is replayed:
 // ../lib/cachedAnswer.js; the key: ../lib/routeCacheKey.js; who may skip it: ../lib/bypass.js.
@@ -62,25 +63,34 @@ export const getRedisClient = async ({ redisUrl }) => {
  * @param {string} [props.redisUrl]
  * @param {string | null} [props.bypassSecret]
  * @param {() => Promise<any>} [props.getClient] - for tests: the Redis client, else the shared one of `redisUrl`.
+ * @param {string | null} [props.routePath] - the route's registered path, the label of its counts (lib/routeCacheCounts.js).
  */
-export default ({ duration, template, redisUrl = process.env.APP_REDIS_URI, bypassSecret = null, getClient = () => getRedisClient({ redisUrl }) }) => {
+export default ({ duration, template, redisUrl = process.env.APP_REDIS_URI, bypassSecret = null, getClient = () => getRedisClient({ redisUrl }), routePath = null }) => {
   const windowInMilliseconds = Number(duration)
   const isWindowPositive = Number.isFinite(windowInMilliseconds) && windowInMilliseconds > 0
+  const count = (outcome) => countTheRouteCacheLookup({ routePath, storage: 'redis', outcome })
+  const countTheStore = (outcome) => countTheRouteCacheStore({ routePath, storage: 'redis', outcome })
 
   return async (req, res, next) => {
     if (isRouteCacheBypassedFor({ request: req, bypassSecret })) {
+      count(routeCacheBypassOutcomeOf({ request: req, bypassSecret }) || 'bypass_in_process')
       next()
       return
+    }
+    if (isTheBypassHeaderRefusedFor(req)) {
+      count('bypass_refused')
     }
 
     const key = routeCacheKeyOf({ request: req, template })
     if (!key) {
+      count('no_key')
       next()
       return
     }
 
     const client = await getClient()
     if (!client) {
+      count('no_client')
       next()
       return
     }
@@ -88,21 +98,27 @@ export default ({ duration, template, redisUrl = process.env.APP_REDIS_URI, bypa
     try {
       const answer = answerOfRedisEntry(await client.get(key))
       if (answer) {
+        count('hit')
         replayAnswer({ response: res, answer })
         return
       }
     } catch (error) {
       console.error('[@servable/parse-server-engine/cache/redis] Failed to read cache', error)
     }
+    count('miss')
 
     if (isWindowPositive) {
       keepTheAnswerOf({
         response: res,
         keepAnswer: (answer) => {
-          client.set(key, redisEntryOf(answer), { PX: windowInMilliseconds }).catch((error) => {
-            console.error('[@servable/parse-server-engine/cache/redis] Failed to write cache', error)
-          })
+          client.set(key, redisEntryOf(answer), { PX: windowInMilliseconds })
+            .then(() => countTheStore('stored'))
+            .catch((error) => {
+              countTheStore('write_failed')
+              console.error('[@servable/parse-server-engine/cache/redis] Failed to write cache', error)
+            })
         },
+        onAnswerNotKept: () => countTheStore('not_cacheable'),
       })
     }
 

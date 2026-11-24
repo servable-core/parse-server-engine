@@ -42,7 +42,7 @@ const resolveConfigurations = ({ cache }) => {
   return resolveModernConfigurations({ cache })
 }
 
-const buildMiddleware = ({ configuration, bypassSecret }) => {
+const buildMiddleware = ({ configuration, bypassSecret, routePath }) => {
   const {
     storage,
     window,
@@ -54,7 +54,8 @@ const buildMiddleware = ({ configuration, bypassSecret }) => {
       return memory({
         duration: window,
         template,
-        bypassSecret
+        bypassSecret,
+        routePath
       })
     }
     case 'redis': {
@@ -62,7 +63,8 @@ const buildMiddleware = ({ configuration, bypassSecret }) => {
         duration: window,
         template,
         redisUrl: process.env.APP_REDIS_URI,
-        bypassSecret
+        bypassSecret,
+        routePath
       })
     }
     default: {
@@ -116,14 +118,15 @@ const resolveConfigurationIndex = ({ configurations, req }) => {
  * @param {object} props
  * @param {any} [props.cache]
  * @param {string | null} [props.bypassSecret] - the server's secret for `x-servable-reset-cache` (lib/bypass.js).
+ * @param {string | null} [props.routePath] - the route's registered path, the label of its counts (lib/routeCacheCounts.js).
  */
-export default ({ cache = {}, bypassSecret = null }) => {
+export default ({ cache = {}, bypassSecret = null, routePath = null }) => {
   const configurations = resolveConfigurations({ cache })
   if (!configurations.length) {
     return empty
   }
 
-  const middlewares = configurations.map((configuration) => buildMiddleware({ configuration, bypassSecret }))
+  const middlewares = configurations.map((configuration) => buildMiddleware({ configuration, bypassSecret, routePath }))
 
   return (req, res, next) => {
     const index = resolveConfigurationIndex({

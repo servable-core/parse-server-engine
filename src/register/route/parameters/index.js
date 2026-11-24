@@ -1,6 +1,23 @@
 import { compiledQueryStringDeclarationOf } from './declaration.js'
 import { coercedValueOf, readDeclaredValues } from './coercion.js'
 import { guessedQueryValuesOf, queryStringOfUrl, rawQueryOf } from './queryString.js'
+import { engineCounterNamed } from '../../../lib/metrics.js'
+
+// Production proof 3.8 (.docs/technical/production-proof-instrumentation-2026-11-23.md), through Servable.App.Metrics:
+//   servable_route_parameter_refusals_total{route}               a request refused with a 400 (never the value, never the parameter)
+//   servable_route_parameter_reads_total{mode}                   each parameter read: declared, wildcard_guessed, wildcard_typed,
+//                                                                undeclared_text, undeclared_guessed (no route: one add per parameter)
+//   servable_route_parameter_undeclared_text_reads_total{route}  an undeclared parameter read as raw text with guessing off: the one
+//                                                                silent change of behaviour (a handler comparing with a number gets a string)
+const refusalsCounter = engineCounterNamed('servable_route_parameter_refusals_total', {
+  description: 'Count of requests refused with a 400 because a query parameter could not be read as declared, by route.',
+})
+const readsCounter = engineCounterNamed('servable_route_parameter_reads_total', {
+  description: 'Count of query parameters read, by how they were read (declared, wildcard_guessed, wildcard_typed, undeclared_text, undeclared_guessed).',
+})
+const undeclaredTextReadsCounter = engineCounterNamed('servable_route_parameter_undeclared_text_reads_total', {
+  description: 'Count of undeclared query parameters read as raw text with guessing off, by route.',
+})
 
 // The parameters a route's handler gets (`params`, and `request.query`), read from the request's query string once,
 // before the handler (process/http.js, verbs/function/processFunction.js):
@@ -22,7 +39,7 @@ import { guessedQueryValuesOf, queryStringOfUrl, rawQueryOf } from './queryStrin
  * @param {boolean} props.areDeclaredRouteParametersTyped - off: every parameter is read as undeclared.
  * @param {string} [props.routeName] - `GET /v1/article`, for the boot log.
  * @param {(...message: any[]) => void} [props.reportDeclarationProblem]
- * @returns {{ isDeclared: boolean, readQueryOf: (request: { originalUrl?: string, url?: string }) => Record<string, any> }}
+ * @returns {{ isDeclared: boolean, isWildcardGuessed: boolean, readQueryOf: (request: { originalUrl?: string, url?: string }) => Record<string, any> }}
  */
 export const createRouteParametersReader = ({
   queryStringDeclaration,
@@ -49,20 +66,42 @@ export const createRouteParametersReader = ({
     }
     : (isQueryValueGuessingEnabled ? guessedQueryValuesOf : (rawValue) => rawValue)
 
+  const undeclaredReadMode = everyOtherParameter
+    ? (everyOtherParameter.type === 'guessed' ? 'wildcard_guessed' : 'wildcard_typed')
+    : (isQueryValueGuessingEnabled ? 'undeclared_guessed' : 'undeclared_text')
+  const countTheReads = (rawQuery) => {
+    for (const name of Object.keys(rawQuery || {})) {
+      const mode = Object.prototype.hasOwnProperty.call(parameters, name) ? 'declared' : undeclaredReadMode
+      readsCounter.add(1, { mode })
+      if (mode === 'undeclared_text') {
+        undeclaredTextReadsCounter.add(1, { route: routeName })
+      }
+    }
+  }
+
   const readQueryOf = (request) => {
     const rawQuery = rawQueryOf(queryStringOfUrl(request?.originalUrl ?? request?.url))
-    const { values, problems: problemsOfTheRequest } = readDeclaredValues({
-      rawValues: rawQuery,
-      declarations: parameters,
-      readUndeclaredValue,
-    })
+    countTheReads(rawQuery)
+    let read
+    try {
+      read = readDeclaredValues({
+        rawValues: rawQuery,
+        declarations: parameters,
+        readUndeclaredValue,
+      })
+    } catch (error) {
+      refusalsCounter.add(1, { route: routeName })
+      throw error
+    }
+    const { values, problems: problemsOfTheRequest } = read
     if (problemsOfTheRequest.length) {
+      refusalsCounter.add(1, { route: routeName })
       throw { code: 400, message: `Invalid query string: ${problemsOfTheRequest.join('; ')}` }
     }
     return values
   }
 
-  return { isDeclared, readQueryOf }
+  return { isDeclared, isWildcardGuessed: everyOtherParameter?.type === 'guessed', readQueryOf }
 }
 
-export { recordUndeclaredRoute, undeclaredParameterRoutes, forgetUndeclaredParameterRoutes, doesHandlerSeemToReadParameters } from './bootReport.js'
+export { recordUndeclaredRoute, undeclaredParameterRoutes, forgetUndeclaredParameterRoutes, doesHandlerSeemToReadParameters, recordDefinedRouteParameters, reportTheRouteParametersSummarySoon } from './bootReport.js'

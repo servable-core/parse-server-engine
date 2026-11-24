@@ -48,14 +48,25 @@ export const markAnswerAsAnError = (response) => {
  * @param {object} props
  * @param {any} props.response
  * @param {(answer: CachedAnswer) => void} props.keepAnswer
+ * @param {() => void} [props.onAnswerNotKept] - called once when a serialized answer was sent that may not be cached.
  */
-export const keepTheAnswerOf = ({ response, keepAnswer }) => {
+export const keepTheAnswerOf = ({ response, keepAnswer, onAnswerNotKept }) => {
   const sendOfExpress = response.send
   let isAnswerKept = false
+  let isAnswerNotKeptReported = false
   response.send = function sendAndKeepTheAnswer (body) {
     const isSerializedBody = typeof body === 'string' || Buffer.isBuffer(body)
     const result = sendOfExpress.call(this, body)
-    if (isSerializedBody && !isAnswerKept && isAnswerCacheable(response)) {
+    if (isSerializedBody && !isAnswerKept && !isAnswerCacheable(response)) {
+      if (!isAnswerNotKeptReported) {
+        isAnswerNotKeptReported = true
+        try {
+          onAnswerNotKept?.()
+        } catch (error) {
+          // A count never fails an answer.
+        }
+      }
+    } else if (isSerializedBody && !isAnswerKept) {
       isAnswerKept = true
       const contentType = response.getHeader('content-type')
       try {

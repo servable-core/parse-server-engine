@@ -1,5 +1,6 @@
 import doLaunch from '../doLaunch/index.js'
-import engineOptionsFrom from '../options/index.js'
+import engineOptionsFrom, { routeCacheBypassSecretFrom } from '../options/index.js'
+import { reportTheEngineOptions } from '../options/report.js'
 import installTheEnginePatches from '../patches/index.js'
 import createIndexes, { adapterResolverFor, startEnsuringTheDeclaredIndexes } from '../indexes/index.js'
 import { engineDatabaseOf } from '../stateStore/index.js'
@@ -63,6 +64,8 @@ export default async ({ schema, configuration, app }) => {
   }
 
   const engineOptions = engineOptionsFrom({ engineConfiguration: configuration.config.engine })
+  // Production proof 3.14: every option as resolved, the bypass secret only as set or not set.
+  reportTheEngineOptions({ engineOptions, routeCacheBypassSecret: routeCacheBypassSecretFrom({ engineConfiguration: configuration.config.engine }) })
 
   const migrationControlsInstallation = installTheMigrationControls()
   const engineDatabase = await engineDatabaseOf({ configuration }).catch(() => null)

@@ -6,7 +6,7 @@ import sanitizePath from 'path-sanitizer'
 // import uploadfile from "./verbs/uploadfile/index.js"
 import handleFunction from "./verbs/function/index.js"
 import engineOptionsFrom, { routeCacheBypassSecretFrom } from '../../options/index.js'
-import { createRouteParametersReader, recordUndeclaredRoute, undeclaredParameterRoutes } from './parameters/index.js'
+import { createRouteParametersReader, recordDefinedRouteParameters, recordUndeclaredRoute, reportTheRouteParametersSummarySoon, undeclaredParameterRoutes } from './parameters/index.js'
 import { reportTheUndeclaredParameterRoutesSoon } from './parameters/bootReport.js'
 
 /**
@@ -70,13 +70,18 @@ export default ({ servableConfig }) => {
       areDeclaredRouteParametersTyped,
       routeName,
     })
+    let doesSeemToReadParameters = false
     if (!routeParametersReader.isDeclared) {
       const undeclaredRoute = recordUndeclaredRoute({ routeName, handler })
+      doesSeemToReadParameters = undeclaredRoute.doesSeemToReadParameters
       if (areUndeclaredParameterRoutesRefused && !isQueryValueGuessingEnabled && undeclaredRoute.doesSeemToReadParameters) {
         throw new Error(`[ENGINE] [route parameters] ${routeName} reads its parameters and declares none in schema.queryString, while query value guessing is off (areUndeclaredParameterRoutesRefused)`)
       }
       reportTheUndeclaredParameterRoutesSoon()
     }
+    // Production proof 3.8: every route counted, and one summary line once the definitions pause.
+    recordDefinedRouteParameters({ isDeclared: routeParametersReader.isDeclared, isWildcardGuessed: routeParametersReader.isWildcardGuessed, doesSeemToReadParameters })
+    reportTheRouteParametersSummarySoon({ isQueryValueGuessingEnabled, areDeclaredRouteParametersTyped })
     return Promise.all(urls.map(async _path => {
       switch (method.toLowerCase()) {
         case 'get': {
@@ -84,7 +89,7 @@ export default ({ servableConfig }) => {
           __url = `/${sanitizePath.default(__url)}`.toLowerCase()
           Servable.AppNative.get(
             __url,
-            _cache({ cache: options.cache, bypassSecret }),
+            _cache({ cache: options.cache, bypassSecret, routePath: __url }),
             _rateLimiter({
               rateLimiting: options.rateLimiting,
               routeKey: `${method.toLowerCase()}:${__url}`
@@ -105,7 +110,7 @@ export default ({ servableConfig }) => {
           __url = `/${sanitizePath.default(__url)}`.toLowerCase()
           Servable.AppNative.head(
             __url,
-            _cache({ cache: options.cache, bypassSecret }),
+            _cache({ cache: options.cache, bypassSecret, routePath: __url }),
             _rateLimiter({
               rateLimiting: options.rateLimiting,
               routeKey: `${method.toLowerCase()}:${__url}`
@@ -241,7 +246,7 @@ export default ({ servableConfig }) => {
           __url = `/${sanitizePath.default(__url)}`.toLowerCase()
           Servable.AppNative.trace(
             __url,
-            _cache({ cache: options.cache, bypassSecret }),
+            _cache({ cache: options.cache, bypassSecret, routePath: __url }),
             _rateLimiter({
               rateLimiting: options.rateLimiting,
               routeKey: `${method.toLowerCase()}:${__url}`
