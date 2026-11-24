@@ -86,3 +86,21 @@ perf(DefinedSchemas): skip unchanged classes and load the schema once per migrat
 
 No change of behaviour beyond the writes that changed nothing: the same final `_SCHEMA` for every input (the specs
 above compare `_SCHEMA` after the current and the new migration on the same inputs).
+
+---
+
+## Second issue (2026-11-24): an index the definitions do not declare is dropped, every other boot
+
+Found in backend/main (owner's Q1470 a); the engine works around it with a hook on `isProtectedIndex`
+(`src/schemaMigration/`).
+
+- `updateSchema()` deletes every index of `cloudSchema.indexes` that `localSchema.indexes` does not declare, so an index
+  made outside the definitions (unique or partial indexes Parse's schema cannot express, made by the app directly, or
+  by hand) is dropped from MongoDB. There is no way to tell DefinedSchemas to leave an index alone, unlike fields
+  (`deleteExtraFields: false`).
+- It happens every other boot only: `executeMigrations()` reads `getAllClasses()` from the schema cache that
+  `performInitialization()` loaded before `updateSchemaWithIndexes()` copied the real indexes into `_SCHEMA`. A boot that
+  finds the index listed drops it; the next finds it unlisted (and the app made it again), deletes nothing, and
+  `setIndexesWithSchemaFormat()` writes the real list back. `_SCHEMA` never reaches a fixed point.
+- Proposed: an option `deleteExtraIndexes` (default `true` for compatibility) mirroring `deleteExtraFields`, and
+  `executeMigrations()` loading the schema with `clearCache: true`.

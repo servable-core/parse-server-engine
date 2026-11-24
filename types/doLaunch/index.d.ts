@@ -14,6 +14,7 @@ declare function _default({ config, serverCloseComplete, app, migrationControls 
         isSkipped: boolean;
         onCompleted?: () => void;
         onSkipped?: () => void;
+        isIndexProtected?: (className: string, indexName: string) => boolean;
     };
 }): Promise<any>;
 export default _default;

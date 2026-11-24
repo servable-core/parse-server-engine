@@ -11,6 +11,8 @@ import { databaseSchemaHashOf } from '../../src/schemaMigration/index.js'
 // MongoDB and real boots of the engine's launch, each in a process of its own (fixtures/bootOnce.mjs):
 //   - a first boot runs the migration and records it; the next, unchanged, skips it and writes nothing to `_SCHEMA`;
 //   - changed definitions, a `_SCHEMA` changed by hand, no record, or a forced run: the migration runs;
+//   - an index the definitions do not declare (one the engine made after boot, one made by hand) is never dropped by
+//     the migration, and the boots still come to skip it (owner's Q1470 a);
 //   - on backend/main's real definitions (its committed servable.schema.json, when the workspace has it), a migration
 //     run again on what the previous one left changes nothing: the fixed point the skip rests on.
 //
@@ -147,6 +149,43 @@ describeIfMongo('the schema migration at boot (real boots, real MongoDB)', () =>
     await db.collection(COLLECTIONS.parseSchema).deleteMany({})
     expect(await bootOnce({ db, databaseName, classesFile: changedFile })).toMatchObject({ decision: 'ran', reason: 'no completed migration recorded', isRecorded: true, hasChangedNothing: true })
     expect(await bootOnce({ db, databaseName, classesFile: changedFile })).toMatchObject({ decision: 'skipped' })
+  }, 300000)
+})
+
+describeIfMongo('an index Parse did not declare, through the migration (real boots, real MongoDB; owner\'s Q1470 a)', () => {
+  const databaseName = 'servable-schema-migration-undeclared-index-test'
+  let db
+
+  beforeAll(async () => {
+    db = client.db(databaseName)
+    await db.dropDatabase()
+  })
+
+  afterAll(async () => {
+    await db.command({ profile: 0 }).catch(() => {})
+    await db.dropDatabase()
+  })
+
+  // Made as the engine makes an `ensuredIndexes` after boot (src/indexes/storageIndex.js), outside Parse's definitions.
+  const isThereTheUndeclaredIndex = async () => (await db.collection('Book').indexes()).some((index) => index.name === 'pages_1')
+
+  test('is never dropped, and the boots still come to skip the migration', async () => {
+    const classesFile = classesFileOf('undeclared-index', CLASSES)
+    let boot = null
+    for (let count = 0; count < 4 && boot?.decision !== 'skipped'; count += 1) {
+      boot = await bootOnce({ db, databaseName, classesFile })
+    }
+    expect(boot).toMatchObject({ decision: 'skipped' })
+
+    await db.collection('Book').createIndex({ pages: 1 }, { name: 'pages_1', unique: true, sparse: true, background: true })
+    // `_SCHEMA` does not list it yet: this boot skips, and Parse's start lists it.
+    expect(await bootOnce({ db, databaseName, classesFile })).toMatchObject({ decision: 'skipped' })
+    expect((await db.collection('_SCHEMA').findOne({ _id: 'Book' }))._metadata.indexes).toHaveProperty('pages_1')
+    // Now listed in `_SCHEMA` and not declared: Parse's migration used to drop it here.
+    expect(await bootOnce({ db, databaseName, classesFile })).toMatchObject({ decision: 'ran', reason: 'database schema changed since the last migration', isRecorded: true, hasChangedNothing: true })
+    expect(await isThereTheUndeclaredIndex()).toBe(true)
+    expect(await bootOnce({ db, databaseName, classesFile })).toMatchObject({ decision: 'skipped' })
+    expect(await isThereTheUndeclaredIndex()).toBe(true)
   }, 300000)
 })
 

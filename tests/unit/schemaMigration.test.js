@@ -95,6 +95,10 @@ describe('the hooks on DefinedSchemas', () => {
       async enforceCLPForNonProvidedClass() {
         calls.push('enforce CLP')
       }
+
+      isProtectedIndex(className, indexName) {
+        return indexName === '_id_'
+      }
     }
     return { DefinedSchemas, calls }
   }
@@ -140,7 +144,7 @@ describe('the hooks on DefinedSchemas', () => {
   })
 
   test('a class without the expected methods (another Parse) is left alone, and then the migration always runs', async () => {
-    expect(installTheMigrationControls(class Other {})).toEqual({ isInstalled: false, reason: 'DefinedSchemas has no execute/enforceCLPForNonProvidedClass' })
+    expect(installTheMigrationControls(class Other {})).toEqual({ isInstalled: false, reason: 'DefinedSchemas has no execute/enforceCLPForNonProvidedClass/isProtectedIndex' })
     const plan = await planTheSchemaMigration({ db: null, definitions: DEFINITIONS, schemaOptions: OPTIONS, isForced: false, areControlsInstalled: false })
     expect(plan).toMatchObject({ isMigrationRun: true, reason: 'migration controls not installed' })
   })

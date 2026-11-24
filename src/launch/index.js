@@ -4,7 +4,7 @@ import installTheEnginePatches from '../patches/index.js'
 import createIndexes, { adapterResolverFor, startEnsuringTheDeclaredIndexes } from '../indexes/index.js'
 import { engineDatabaseOf } from '../stateStore/index.js'
 import { PARSE_SCHEMA_MIGRATION_OPTIONS } from '../doLaunch/index.js'
-import { installTheMigrationControls, planTheSchemaMigration, recordTheCompletedMigration } from '../schemaMigration/index.js'
+import { installTheMigrationControls, migrationControlsOf, planTheSchemaMigration, recordTheCompletedMigration } from '../schemaMigration/index.js'
 
 // Replaces launchWithMigration/index.js and launchWithNoMigration/index.js - see
 // .docs/technical/unischema-plan.md. There is no more migrate/no-migrate branch to choose
@@ -29,6 +29,8 @@ import { installTheMigrationControls, planTheSchemaMigration, recordTheCompleted
 //
 // Parse's schema migration is skipped when neither the definitions nor the database's schema changed since the last
 // migration that completed (schemaMigration/, framework audit 2026-11-23 F4); `isSchemaMigrationForced` runs it anyway.
+// Whether it runs or not, it never deletes an index the definitions do not declare (the engine's own, made after boot,
+// or one made by hand), unless the definitions declared it at the last completed run.
 
 /**
  * A class definition as Parse Server's schema option takes it: without the engine's own keys.
@@ -78,10 +80,8 @@ export default async ({ schema, configuration, app }) => {
   const server = await doLaunch({
     config,
     app,
-    migrationControls: {
-      isSkipped: !schemaMigrationPlan.isMigrationRun,
-      onCompleted: () => { hasTheMigrationCompleted = true },
-    },
+    // Skipped or not, and the indexes Parse did not declare kept from deletion (schemaMigration/, owner's Q1470 a).
+    migrationControls: migrationControlsOf({ plan: schemaMigrationPlan, onCompleted: () => { hasTheMigrationCompleted = true } }),
   })
   const recording = schemaMigrationPlan.isMigrationRun
     ? await recordTheCompletedMigration({ db: engineDatabase, plan: schemaMigrationPlan, hasCompleted: hasTheMigrationCompleted, collectionPrefix })

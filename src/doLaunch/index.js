@@ -29,8 +29,8 @@ export const PARSE_SCHEMA_MIGRATION_OPTIONS = Object.freeze({
  * @param {{ parse: Record<string, any> }} props.config - `servableConfig`; only `.parse` is read.
  * @param {() => any} [props.serverCloseComplete] - parse-server's own shutdown hook.
  * @param {import('express').Express} props.app
- * @param {{ isSkipped: boolean, onCompleted?: () => void, onSkipped?: () => void }} [props.migrationControls] - whether
- *   Parse's schema migration runs this boot, and who hears it completed (schemaMigration/).
+ * @param {{ isSkipped: boolean, onCompleted?: () => void, onSkipped?: () => void, isIndexProtected?: (className: string, indexName: string) => boolean }} [props.migrationControls] - whether
+ *   Parse's schema migration runs this boot, who hears it completed, and which indexes it must not delete (schemaMigration/).
  * @returns {Promise<any>} the mounted parse-server Express app (`server.app`).
  */
 export default async ({ config, serverCloseComplete, app, migrationControls }) => {
