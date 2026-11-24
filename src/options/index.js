@@ -11,6 +11,7 @@
 //   isQueryValueGuessingEnabled     SERVABLE_QUERY_VALUE_GUESSING      on   a query parameter no route declares is guessed (number-looking text a number, `true`/`false` booleans); off, it is the text the client sent (register/route/parameters/)
 //   areDeclaredRouteParametersTyped SERVABLE_TYPED_ROUTE_PARAMETERS    on   a parameter a route declares in `schema.queryString` is read as its type, defaulted, and refused (400) when it cannot be; off, every parameter is read as undeclared (register/route/parameters/)
 //   areUndeclaredParameterRoutesRefused SERVABLE_REFUSE_UNDECLARED_PARAMETER_ROUTES off  with guessing off, defining a route whose handler reads its parameters and that declares none throws, so the boot stops (register/route/parameters/)
+//   areDeclaredRouteBodiesChecked   SERVABLE_CHECKED_ROUTE_BODIES      on   a route that declares `schema.body` gets its JSON body checked (types, limits, defaults) and refused (400) when it breaks it; off, every `schema.body` is ignored and the body handed raw (register/route/parameters/body.js)
 
 export const ENGINE_OPTIONS = {
   isFastObjectGetEnabled: { environmentVariable: 'PARSE_FAST_OBJECT_GET', defaultValue: false },
@@ -21,6 +22,7 @@ export const ENGINE_OPTIONS = {
   isQueryValueGuessingEnabled: { environmentVariable: 'SERVABLE_QUERY_VALUE_GUESSING', defaultValue: true },
   areDeclaredRouteParametersTyped: { environmentVariable: 'SERVABLE_TYPED_ROUTE_PARAMETERS', defaultValue: true },
   areUndeclaredParameterRoutesRefused: { environmentVariable: 'SERVABLE_REFUSE_UNDECLARED_PARAMETER_ROUTES', defaultValue: false },
+  areDeclaredRouteBodiesChecked: { environmentVariable: 'SERVABLE_CHECKED_ROUTE_BODIES', defaultValue: true },
 }
 
 /**
@@ -49,7 +51,7 @@ export const booleanFromEnvironmentValue = (rawValue) => {
  * @param {object} [props]
  * @param {Record<string, any>} [props.engineConfiguration] - `servableConfig.configuration.config.engine`.
  * @param {Record<string, string | undefined>} [props.env]
- * @returns {{ isFastObjectGetEnabled: boolean, isSchemaControllerReuseEnabled: boolean, areDeclaredIndexesEnsured: boolean, isSchemaMigrationForced: boolean, isLazyFetchSnapshotEnabled: boolean, isQueryValueGuessingEnabled: boolean, areDeclaredRouteParametersTyped: boolean, areUndeclaredParameterRoutesRefused: boolean }}
+ * @returns {{ isFastObjectGetEnabled: boolean, isSchemaControllerReuseEnabled: boolean, areDeclaredIndexesEnsured: boolean, isSchemaMigrationForced: boolean, isLazyFetchSnapshotEnabled: boolean, isQueryValueGuessingEnabled: boolean, areDeclaredRouteParametersTyped: boolean, areUndeclaredParameterRoutesRefused: boolean, areDeclaredRouteBodiesChecked: boolean }}
  */
 export const engineOptionsFrom = ({ engineConfiguration = {}, env = process.env } = {}) => {
   /** @type {any} */

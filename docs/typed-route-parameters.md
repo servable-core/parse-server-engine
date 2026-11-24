@@ -1,7 +1,8 @@
 # Typed route parameters
 
 Design note, 2026-11-23 (owner's Q1230 a and Q1375 a). A route reads each query string parameter as the type it declares,
-once, before its handler, instead of the engine guessing a type from the value.
+once, before its handler, instead of the engine guessing a type from the value. Since 2026-11-24 (owner's Q1720 a) a
+route can declare its JSON body the same way: see "Declared bodies".
 
 ## The problem
 
@@ -83,6 +84,7 @@ are text.
 | `isQueryValueGuessingEnabled` | `SERVABLE_QUERY_VALUE_GUESSING` | on | A parameter no route declares (no entry, no `'*'`) is guessed as before; off, it is the text the client sent. Also what Express's `request.query` holds everywhere on the app. |
 | `areDeclaredRouteParametersTyped` | `SERVABLE_TYPED_ROUTE_PARAMETERS` | on | The kill switch: off, every declaration is ignored and every parameter read as undeclared (exactly the former behaviour while guessing is on). |
 | `areUndeclaredParameterRoutesRefused` | `SERVABLE_REFUSE_UNDECLARED_PARAMETER_ROUTES` | off | With guessing off, defining a route that seems to read its parameters and declares none throws, so the boot stops. |
+| `areDeclaredRouteBodiesChecked` | `SERVABLE_CHECKED_ROUTE_BODIES` | on | A route that declares `schema.body` gets its JSON body checked before its handler (see "Declared bodies" below); off, every `schema.body` is ignored. |
 
 Typed parameters are opt-in per route: a route without `schema.queryString` reads its query string exactly as before.
 The guess itself is unchanged: `createQueryParser` parses with qs (`allowDots`) and guesses values afterwards; a property
@@ -99,11 +101,86 @@ when the app has defined its last route), and `Servable.App.Route.undeclaredPara
 that turns guessing off should declare every route (`queryString: {}` when it reads nothing) and check the full list:
 backend/main's guard applies that rule to its files (`testing/routeParametersDeclared.guard.spec.js`).
 
+### Declared bodies (`body.js`, 2026-11-24, owner's Q1720 a)
+
+**The problem.** Q1372 a (2026-11-23) left bodies unread. Then clients moved values out of URLs and into the JSON body
+(PEAKUB-512: backend/main's `account/signin/with` takes `provider`, `idToken`, `locale`, `timeZone` and `installation` from
+the body, so URLs and their logs never hold a token). The route's `schema.queryString` limits only hold for the query
+string, so the same values sent in the body reach the handler unchecked, any length. The body needs the same
+declaration.
+
+**Declaration.** `schema.body` maps each field of the JSON body to a declaration, with the same words, types and
+shorthands as `schema.queryString` (`'string'`, `'string[]'`, `{ type: 'string', maxLength: 35 }`, `isRequired`,
+`default`, `enum`, nested `object` with `properties`, `array` with `items`, `'*'`), compiled once when the route is
+defined, its problems logged then, never failing the boot. Two differences, both because JSON already carries types:
+
+- `guessed` means nothing in a body (nothing is text to guess from): it is logged and read as `any`.
+- an `array` without `items` holds any JSON values, where in a query string it holds text.
+
+```js
+schema: {
+  body: {
+    provider: { type: 'string', maxLength: 20 },
+    locale: { type: 'string', maxLength: 35 },
+    installation: { type: 'object', properties: { deviceType: { type: 'string', maxLength: 20 } } },
+    rememberMe: { type: 'boolean', default: false },
+  },
+}
+```
+
+**Checking, not converting.** A body value is checked against its type and limits, never converted:
+
+| Type | Accepted | Refused |
+| --- | --- | --- |
+| boolean | `true`, `false` | `"true"`, `1`, anything else |
+| integer | a JSON number that is a safe integer | `1.5`, `"7"` |
+| number | a JSON number | `"1.5"` |
+| string | a JSON string | a number, a boolean, a list, an object |
+| array | a JSON array, each item checked as `items` | one value (it is not a list of one, as in a query string) |
+| object | a JSON object; declared properties checked, the others kept as sent | a list, a value |
+| any | anything | nothing |
+
+`null` and a missing field are both no value: the default applies when there is one, a required field is refused, and
+otherwise the field stays as sent (`null` stays `null`, so a handler that reads `null` as "clear this" still can).
+
+**Undeclared fields.** Without a `'*'` entry they are kept as sent: the route declares what it wants checked and the
+rest of the body is as today. `'*': { type: 'string', maxLength: 200 }` checks every field the route does not name
+against that declaration; `'*': 'any'` is the same as no entry. Refusing unknown fields (JSON Schema's
+`additionalProperties: false`) is not offered: nothing asks for it yet.
+
+**When and where.** On the routes that parse a body (`post`, `put`, `patch`, `delete`, `options`, and `function` without
+`files`), in `process/http.js` and `verbs/function/processFunction.js`, right after the query string and before the user
+is resolved, so a refused body costs no session lookup. The raw body `bodyParser.raw` handed over (the route's
+`request.type`, JSON by default) is parsed once: empty is `{}`, text that is not JSON is refused, JSON that is not an
+object is refused. A body `bodyParser.raw` did not read (another content type) is empty, as the handler would see it.
+A `get`, `head` or `trace` route (no body is parsed) and a `function` route with `files` (a multipart form: its fields
+are text, not JSON) that declare `schema.body` are logged at define and their declaration ignored.
+
+**What the handler gets.** `request.body` is the checked object, its defaults applied; Express's own request
+(`native.request.body`) keeps the raw buffer. `params` stays the query string. A handler that reads its body through a
+helper accepting either a buffer or an object (backend/main's `app/lib/readJsonBody.js`) reads the same values whether
+the option below is on or off, and parses nothing twice.
+
+**Refused.** A body that breaks its declaration answers 400 with the same shape as a query string refusal,
+`{ "error": "Invalid body: \"locale\": expected at most 35 characters, got text of 120 characters; …", "code": 400 }`,
+every field at fault named, the handler never run. **The value itself is never quoted**, only its kind and size: the body
+is where clients put what must stay out of URLs and logs (a token, a password), and an error message ends up in logs.
+
+**Counted.** `servable_route_parameter_refusals_total{route, source}`, `source` being `query` or `body` (the query string's
+refusals gain `source="query"`): the series stay at most two per route, never a field name or a value. Body fields are
+not counted on `servable_route_parameter_reads_total`, whose modes describe how query text is guessed or not, which a
+body has no equivalent of.
+
+**The option.** `areDeclaredRouteBodiesChecked` (`SERVABLE_CHECKED_ROUTE_BODIES`, on). It only acts on routes that
+declare `schema.body`; an undeclared body stays exactly as today. Off is the kill switch: every `schema.body` is
+ignored and the handler gets the raw body, as before. It is separate from `areDeclaredRouteParametersTyped`, so either
+can be turned off without the other.
+
+**Cost.** One `JSON.parse` of a body the handler would parse anyway (and does not parse again through `readJsonBody`),
+and a walk over the declared fields only.
+
 ### Not in scope
 
-- **The body.** Route verbs hand POST bodies raw (`bodyParser.raw`) and apps parse them; a JSON body already carries
-  types. Declaring and reading `schema.body` would make the engine parse bodies: left out by decision (owner's Q1372 a,
-  2026-11-23); a body design gets its own step if it is ever needed.
 - **Treating the text `undefined` or `null` as no value.** Sent for a declared boolean or number, it is refused with a
   400 like any value that cannot be read (owner's Q1373 a, 2026-11-23): it is a client bug the guess used to hide, and the client is fixed. A
   declared string keeps it as the text sent. Pinned by `tests/unit/routeParameters.test.js`.

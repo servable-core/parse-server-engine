@@ -19,7 +19,10 @@ export default async ({
     // The query string read as the route declares it (parameters/index.js): a value that cannot be read throws a 400
     // here, before anything else runs. Without a reader (a caller of this function that predates it), Express's query.
     const query = routeParametersReader ? routeParametersReader.readQueryOf(request) : undefined
-    const _request = requestAdapter({ request, query })
+    // The JSON body checked as the route's `schema.body` declares it (parameters/body.js), a 400 here too; nothing for a
+    // route that declares none, whose handler gets the raw body as before.
+    const body = routeParametersReader?.readBodyOf ? routeParametersReader.readBodyOf(request) : undefined
+    const _request = requestAdapter({ request, query, body })
     const native = {
       request,
       response,

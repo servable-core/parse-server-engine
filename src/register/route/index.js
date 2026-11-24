@@ -16,6 +16,24 @@ import { routeDurationMiddlewareOf } from './duration/index.js'
  */
 export const isConnectMethod = (method) => String(method).toLowerCase() === 'connect'
 
+/**
+ * Whether a route hands its handler a JSON body read by `bodyParser.raw` (below, and verbs/function/index.js): every
+ * verb but get, head and trace, which parse no body, and a function route with `files`, whose body is a multipart form.
+ * Any other method is defined as a function route (the `default` of the switch below).
+ * @param {{ method: unknown, hasFiles: boolean }} props
+ * @returns {boolean}
+ */
+export const doesRouteParseAJsonBody = ({ method, hasFiles }) => {
+  const verb = String(method).toLowerCase()
+  if (['get', 'head', 'trace'].includes(verb)) {
+    return false
+  }
+  if (['post', 'put', 'patch', 'delete', 'options'].includes(verb)) {
+    return true
+  }
+  return !hasFiles
+}
+
 export default ({ servableConfig }) => {
   const item = {}
 
@@ -58,17 +76,22 @@ export default ({ servableConfig }) => {
       return
     }
 
-    // The route's parameters, read as `schema.queryString` declares them (parameters/index.js), compiled once here.
+    // The route's parameters, read as `schema.queryString` declares them, and its JSON body, checked as `schema.body`
+    // declares it (parameters/index.js, parameters/body.js), compiled once here.
     const {
       isQueryValueGuessingEnabled,
       areDeclaredRouteParametersTyped,
       areUndeclaredParameterRoutesRefused,
+      areDeclaredRouteBodiesChecked,
     } = engineOptionsFrom({ engineConfiguration: servableConfig?.configuration?.config?.engine })
     const routeName = `${String(method).toUpperCase()} ${urls.map((routePath) => (prefix ? `${prefix}/${routePath}` : routePath)).join(', ')}`
     const routeParametersReader = createRouteParametersReader({
       queryStringDeclaration: schema?.queryString,
       isQueryValueGuessingEnabled,
       areDeclaredRouteParametersTyped,
+      bodyDeclaration: schema?.body,
+      areDeclaredRouteBodiesChecked,
+      isBodyParsed: doesRouteParseAJsonBody({ method, hasFiles: Boolean(options.files) }),
       routeName,
     })
     let doesSeemToReadParameters = false

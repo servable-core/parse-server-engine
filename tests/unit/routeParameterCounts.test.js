@@ -30,7 +30,7 @@ describe('route parameters, counted', () => {
 
   test('a value the declaration refuses is counted by route, never with the value (the alarm path)', () => {
     expect(() => readerOf({ page: 'integer' }).readQueryOf({ url: '/v1/explore?page=secret-abc' })).toThrow()
-    expect(named('servable_route_parameter_refusals_total')).toEqual([{ name: 'servable_route_parameter_refusals_total', value: 1, route: 'GET /v1/explore' }])
+    expect(named('servable_route_parameter_refusals_total')).toEqual([{ name: 'servable_route_parameter_refusals_total', value: 1, route: 'GET /v1/explore', source: 'query' }])
     expect(JSON.stringify(metrics.recorded)).not.toContain('secret-abc')
   })
 

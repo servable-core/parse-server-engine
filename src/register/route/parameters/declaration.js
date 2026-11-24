@@ -68,15 +68,22 @@ const KEYWORD_HINTS = {
  * @property {Record<string, RouteParameterDeclaration | string>} [properties] - object: its declared properties.
  */
 
+// Where the declared values come from: `query` (`schema.queryString`, text read into its type) or `body`
+// (`schema.body`, JSON whose values already carry their types, body.js). The vocabulary is the same, with two
+// differences in a body: `guessed` means nothing (it is read as `any`), and an array without `items` holds any value.
+export const DECLARATION_SOURCES = ['query', 'body']
+
 /**
  * A declaration written as a shorthand (`'integer'`, `'string[]'`) or in full, as the full form, checked. Answers the
  * declaration (or `null` when it cannot be read at all) and what is wrong with it.
  * @param {object} props
  * @param {any} props.declaration
  * @param {string} props.path - the parameter's name, dotted for a property or an item, for the messages.
+ * @param {'query' | 'body'} [props.source] - where the values come from (DECLARATION_SOURCES).
  * @returns {{ declaration: RouteParameterDeclaration | null, problems: string[] }}
  */
-export const normalizedDeclarationOf = ({ declaration, path }) => {
+export const normalizedDeclarationOf = ({ declaration, path, source = 'query' }) => {
+  const isBody = source === 'body'
   /** @type {string[]} */
   const problems = []
   let full = declaration
@@ -90,7 +97,12 @@ export const normalizedDeclarationOf = ({ declaration, path }) => {
     return { declaration: null, problems: [`"${path}": a declaration is a type name or an object with a type, not ${JSON.stringify(declaration)}`] }
   }
   if (!PARAMETER_TYPES.includes(full.type)) {
-    return { declaration: null, problems: [`"${path}": unknown type ${JSON.stringify(full.type)} (one of ${PARAMETER_TYPES.join(', ')}); the parameter is read as if undeclared`] }
+    const consequence = isBody ? 'the field is not checked' : 'the parameter is read as if undeclared'
+    return { declaration: null, problems: [`"${path}": unknown type ${JSON.stringify(full.type)} (one of ${PARAMETER_TYPES.join(', ')}); ${consequence}`] }
+  }
+  if (isBody && full.type === 'guessed') {
+    problems.push(`"${path}": "guessed" means nothing in a JSON body (its values carry their types) and is read as "any"`)
+    full = { ...full, type: 'any' }
   }
 
   /** @type {any} */
@@ -125,9 +137,11 @@ export const normalizedDeclarationOf = ({ declaration, path }) => {
   }
 
   if (normalized.type === 'array') {
-    const items = normalizedDeclarationOf({ declaration: full.items === undefined ? 'string' : full.items, path: `${path}[]` })
+    // Text when not declared in a query string (every value of one is text); any JSON value in a body.
+    const undeclaredItemType = isBody ? 'any' : 'string'
+    const items = normalizedDeclarationOf({ declaration: full.items === undefined ? undeclaredItemType : full.items, path: `${path}[]`, source })
     problems.push(...items.problems)
-    normalized.items = items.declaration || { type: 'string' }
+    normalized.items = items.declaration || { type: undeclaredItemType }
   }
 
   if (normalized.type === 'object') {
@@ -138,7 +152,7 @@ export const normalizedDeclarationOf = ({ declaration, path }) => {
       problems.push(`"${path}": "properties" must be an object of declarations and is ignored`)
     } else {
       for (const [name, propertyDeclaration] of Object.entries(declaredProperties)) {
-        const property = normalizedDeclarationOf({ declaration: propertyDeclaration, path: `${path}.${name}` })
+        const property = normalizedDeclarationOf({ declaration: propertyDeclaration, path: `${path}.${name}`, source })
         problems.push(...property.problems)
         if (property.declaration) {
           properties[name] = property.declaration
@@ -169,27 +183,31 @@ export const normalizedDeclarationOf = ({ declaration, path }) => {
 }
 
 /**
- * A route's `schema.queryString`, every parameter in its full form. Parameters whose declaration cannot be read are left
- * out (they are read as undeclared) and named in `problems`.
+ * A route's declarations (`schema.queryString` or `schema.body`), every entry in its full form, the `'*'` entry apart.
+ * Entries whose declaration cannot be read are left out and named in `problems`.
  * @param {object} props
- * @param {any} props.queryStringDeclaration
- * @returns {{ parameters: Record<string, RouteParameterDeclaration>, everyOtherParameter?: RouteParameterDeclaration | null, problems: string[] }}
+ * @param {any} props.declarations
+ * @param {'query' | 'body'} props.source
+ * @returns {{ declared: Record<string, RouteParameterDeclaration>, everyOther: RouteParameterDeclaration | null, problems: string[] }}
  */
-export const compiledQueryStringDeclarationOf = ({ queryStringDeclaration }) => {
+const compiledDeclarationsOf = ({ declarations, source }) => {
+  const { schemaKey, entryNoun } = source === 'body'
+    ? { schemaKey: 'schema.body', entryNoun: 'field' }
+    : { schemaKey: 'schema.queryString', entryNoun: 'parameter' }
   /** @type {Record<string, RouteParameterDeclaration>} */
-  const parameters = {}
+  const declared = {}
   /** @type {string[]} */
   const problems = []
-  if (queryStringDeclaration === undefined || queryStringDeclaration === null) {
-    return { parameters, everyOtherParameter: null, problems }
+  if (declarations === undefined || declarations === null) {
+    return { declared, everyOther: null, problems }
   }
-  if (typeof queryStringDeclaration !== 'object' || Array.isArray(queryStringDeclaration)) {
-    return { parameters, everyOtherParameter: null, problems: ['"schema.queryString" must be an object of declarations, one per parameter, and is ignored'] }
+  if (typeof declarations !== 'object' || Array.isArray(declarations)) {
+    return { declared, everyOther: null, problems: [`"${schemaKey}" must be an object of declarations, one per ${entryNoun}, and is ignored`] }
   }
   /** @type {RouteParameterDeclaration | null} */
-  let everyOtherParameter = null
-  for (const [name, declaration] of Object.entries(queryStringDeclaration)) {
-    const normalized = normalizedDeclarationOf({ declaration, path: name })
+  let everyOther = null
+  for (const [name, declaration] of Object.entries(declarations)) {
+    const normalized = normalizedDeclarationOf({ declaration, path: name, source })
     problems.push(...normalized.problems)
     if (!normalized.declaration) {
       continue
@@ -197,17 +215,41 @@ export const compiledQueryStringDeclarationOf = ({ queryStringDeclaration }) => 
     if (name === EVERY_OTHER_PARAMETER) {
       const { type, description } = normalized.declaration
       if ('default' in normalized.declaration || normalized.declaration.isRequired) {
-        problems.push(`"${EVERY_OTHER_PARAMETER}": a default or isRequired names no parameter and is ignored`)
+        problems.push(`"${EVERY_OTHER_PARAMETER}": a default or isRequired names no ${entryNoun} and is ignored`)
       }
-      everyOtherParameter = { ...normalized.declaration, type }
-      delete everyOtherParameter.default
-      delete everyOtherParameter.isRequired
+      everyOther = { ...normalized.declaration, type }
+      delete everyOther.default
+      delete everyOther.isRequired
       if (description === undefined) {
-        delete everyOtherParameter.description
+        delete everyOther.description
       }
       continue
     }
-    parameters[name] = normalized.declaration
+    declared[name] = normalized.declaration
   }
-  return { parameters, everyOtherParameter, problems }
+  return { declared, everyOther, problems }
+}
+
+/**
+ * A route's `schema.queryString`, every parameter in its full form. Parameters whose declaration cannot be read are left
+ * out (they are read as undeclared) and named in `problems`.
+ * @param {object} props
+ * @param {any} props.queryStringDeclaration
+ * @returns {{ parameters: Record<string, RouteParameterDeclaration>, everyOtherParameter?: RouteParameterDeclaration | null, problems: string[] }}
+ */
+export const compiledQueryStringDeclarationOf = ({ queryStringDeclaration }) => {
+  const { declared, everyOther, problems } = compiledDeclarationsOf({ declarations: queryStringDeclaration, source: 'query' })
+  return { parameters: declared, everyOtherParameter: everyOther, problems }
+}
+
+/**
+ * A route's `schema.body`, every field in its full form (body.js). Fields whose declaration cannot be read are left out
+ * (they are kept as sent) and named in `problems`.
+ * @param {object} props
+ * @param {any} props.bodyDeclaration
+ * @returns {{ fields: Record<string, RouteParameterDeclaration>, everyOtherField: RouteParameterDeclaration | null, problems: string[] }}
+ */
+export const compiledBodyDeclarationOf = ({ bodyDeclaration }) => {
+  const { declared, everyOther, problems } = compiledDeclarationsOf({ declarations: bodyDeclaration, source: 'body' })
+  return { fields: declared, everyOtherField: everyOther, problems }
 }
