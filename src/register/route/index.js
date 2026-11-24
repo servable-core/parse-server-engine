@@ -8,6 +8,7 @@ import handleFunction from "./verbs/function/index.js"
 import engineOptionsFrom, { routeCacheBypassSecretFrom } from '../../options/index.js'
 import { createRouteParametersReader, recordDefinedRouteParameters, recordUndeclaredRoute, reportTheRouteParametersSummarySoon, undeclaredParameterRoutes } from './parameters/index.js'
 import { reportTheUndeclaredParameterRoutesSoon } from './parameters/bootReport.js'
+import { routeDurationMiddlewareOf } from './duration/index.js'
 
 /**
  * @param {unknown} method
@@ -89,6 +90,8 @@ export default ({ servableConfig }) => {
           __url = `/${sanitizePath.default(__url)}`.toLowerCase()
           Servable.AppNative.get(
             __url,
+            // First, so a cached answer is measured too, for a route that declares `metrics.isDurationMeasured` (duration/).
+            routeDurationMiddlewareOf({ routeOptions: options, routePath: __url, method }),
             _cache({ cache: options.cache, bypassSecret, routePath: __url }),
             _rateLimiter({
               rateLimiting: options.rateLimiting,
@@ -110,6 +113,8 @@ export default ({ servableConfig }) => {
           __url = `/${sanitizePath.default(__url)}`.toLowerCase()
           Servable.AppNative.head(
             __url,
+            // First, so a cached answer is measured too, for a route that declares `metrics.isDurationMeasured` (duration/).
+            routeDurationMiddlewareOf({ routeOptions: options, routePath: __url, method }),
             _cache({ cache: options.cache, bypassSecret, routePath: __url }),
             _rateLimiter({
               rateLimiting: options.rateLimiting,
@@ -131,6 +136,8 @@ export default ({ servableConfig }) => {
           __url = `/${sanitizePath.default(__url)}`.toLowerCase()
           Servable.AppNative.post(
             __url,
+            // First, so a cached answer is measured too, for a route that declares `metrics.isDurationMeasured` (duration/).
+            routeDurationMiddlewareOf({ routeOptions: options, routePath: __url, method }),
             _rateLimiter({
               rateLimiting: options.rateLimiting,
               routeKey: `${method.toLowerCase()}:${__url}`
@@ -154,6 +161,8 @@ export default ({ servableConfig }) => {
           __url = `/${sanitizePath.default(__url)}`.toLowerCase()
           Servable.AppNative.put(
             __url,
+            // First, so a cached answer is measured too, for a route that declares `metrics.isDurationMeasured` (duration/).
+            routeDurationMiddlewareOf({ routeOptions: options, routePath: __url, method }),
             _rateLimiter({
               rateLimiting: options.rateLimiting,
               routeKey: `${method.toLowerCase()}:${__url}`
@@ -177,6 +186,8 @@ export default ({ servableConfig }) => {
           __url = `/${sanitizePath.default(__url)}`.toLowerCase()
           Servable.AppNative.patch(
             __url,
+            // First, so a cached answer is measured too, for a route that declares `metrics.isDurationMeasured` (duration/).
+            routeDurationMiddlewareOf({ routeOptions: options, routePath: __url, method }),
             _rateLimiter({
               rateLimiting: options.rateLimiting,
               routeKey: `${method.toLowerCase()}:${__url}`
@@ -200,6 +211,8 @@ export default ({ servableConfig }) => {
           __url = `/${sanitizePath.default(__url)}`.toLowerCase()
           Servable.AppNative.delete(
             __url,
+            // First, so a cached answer is measured too, for a route that declares `metrics.isDurationMeasured` (duration/).
+            routeDurationMiddlewareOf({ routeOptions: options, routePath: __url, method }),
             _rateLimiter({
               rateLimiting: options.rateLimiting,
               routeKey: `${method.toLowerCase()}:${__url}`
@@ -223,6 +236,8 @@ export default ({ servableConfig }) => {
           __url = `/${sanitizePath.default(__url)}`.toLowerCase()
           Servable.AppNative.options(
             __url,
+            // First, so a cached answer is measured too, for a route that declares `metrics.isDurationMeasured` (duration/).
+            routeDurationMiddlewareOf({ routeOptions: options, routePath: __url, method }),
             _rateLimiter({
               rateLimiting: options.rateLimiting,
               routeKey: `${method.toLowerCase()}:${__url}`
@@ -246,6 +261,8 @@ export default ({ servableConfig }) => {
           __url = `/${sanitizePath.default(__url)}`.toLowerCase()
           Servable.AppNative.trace(
             __url,
+            // First, so a cached answer is measured too, for a route that declares `metrics.isDurationMeasured` (duration/).
+            routeDurationMiddlewareOf({ routeOptions: options, routePath: __url, method }),
             _cache({ cache: options.cache, bypassSecret, routePath: __url }),
             _rateLimiter({
               rateLimiting: options.rateLimiting,

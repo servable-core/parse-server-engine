@@ -26,3 +26,22 @@ export const engineCounterNamed = (name, options) => ({
     }
   },
 })
+
+/**
+ * A histogram through the same contract (`Servable.App.Metrics.histogram`): nothing is recorded with an @servable/server whose
+ * contract has none. A record never throws.
+ * @param {string} name - in Prometheus form, its unit in the name (`_seconds`).
+ * @param {{ description?: string, bucketBoundaries?: number[] }} [options]
+ * @returns {{ name: string, record: (value: number, attributes?: Record<string, string | number | boolean>) => void }}
+ */
+export const engineHistogramNamed = (name, options) => ({
+  name,
+  record: (value, attributes) => {
+    try {
+      const metrics = metricsContract()
+      typeof metrics?.histogram === 'function' && metrics.histogram(name, options).record(value, attributes)
+    } catch (error) {
+      // A measure never fails what it measures.
+    }
+  },
+})
