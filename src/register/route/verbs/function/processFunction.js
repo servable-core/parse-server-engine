@@ -1,5 +1,6 @@
 import requestAdapter from '../../adapters/request.js'
 import { buildParamsWithTraceContext } from '../../lib/traceContext.js'
+import { httpStatusOfErrorCode } from '../../process/errorStatus.js'
 
 export default async ({
   servableArguments,
@@ -75,7 +76,8 @@ export default async ({
     }
     // next(a)
     // response.send(a)
-    response.status(a.code).json({ error: a.message })
+    // As process/http.js: a code that is no final HTTP status is answered with a 400, the code in the body.
+    response.status(httpStatusOfErrorCode(a.code)).json({ error: a.message, code: a.code })
     // response.status(code)
     // next(a)
   }
