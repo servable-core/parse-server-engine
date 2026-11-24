@@ -1,7 +1,7 @@
 import requestAdapter from '../adapters/request.js'
 import { buildParamsWithTraceContext } from '../lib/traceContext.js'
 import { markAnswerAsAnError } from '../cache/lib/cachedAnswer.js'
-import { httpStatusOfErrorCode } from './errorStatus.js'
+import { httpStatusOfThrownErrorCode } from './errorStatus.js'
 
 export default async ({
   servableArguments,
@@ -98,7 +98,7 @@ export default async ({
     // A code that is no final HTTP status (a Parse code from 100 to 199, a negative one, one above 599) is answered
     // with a 400, the code kept in the body (./errorStatus.js).
     markAnswerAsAnError(response)
-    response.status(httpStatusOfErrorCode(a.code)).json({ error: a.message, code: a.code })
+    response.status(httpStatusOfThrownErrorCode(a.code)).json({ error: a.message, code: a.code })
   }
 }
 
