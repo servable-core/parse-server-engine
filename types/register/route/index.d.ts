@@ -1,3 +1,4 @@
+export function isConnectMethod(method: unknown): boolean;
 declare function _default({ servableConfig }: {
     servableConfig: any;
 }): {

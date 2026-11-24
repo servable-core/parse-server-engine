@@ -102,7 +102,11 @@ backend/main's guard applies that rule to its files (`testing/routeParametersDec
 ### Not in scope
 
 - **The body.** Route verbs hand POST bodies raw (`bodyParser.raw`) and apps parse them; a JSON body already carries
-  types. Declaring and reading `schema.body` would make the engine parse bodies: its own decision (asked as a question).
+  types. Declaring and reading `schema.body` would make the engine parse bodies: left out by decision (owner's Q1372 a,
+  2026-11-23); a body design gets its own step if it is ever needed.
+- **Treating the text `undefined` or `null` as no value.** Sent for a declared boolean or number, it is refused with a
+  400 like any value that cannot be read (owner's Q1373 a, 2026-11-23): it is a client bug the guess used to hide, and the client is fixed. A
+  declared string keeps it as the text sent. Pinned by `tests/unit/routeParameters.test.js`.
 - **Path parameters** (`request.params`): no Servable route uses Express path patterns today.
 - `schema.response` is still documentation only.
 

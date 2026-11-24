@@ -9,6 +9,12 @@ import engineOptionsFrom, { routeCacheBypassSecretFrom } from '../../options/ind
 import { createRouteParametersReader, recordUndeclaredRoute, undeclaredParameterRoutes } from './parameters/index.js'
 import { reportTheUndeclaredParameterRoutesSoon } from './parameters/bootReport.js'
 
+/**
+ * @param {unknown} method
+ * @returns {boolean}
+ */
+export const isConnectMethod = (method) => String(method).toLowerCase() === 'connect'
+
 export default ({ servableConfig }) => {
   const item = {}
 
@@ -41,6 +47,15 @@ export default ({ servableConfig }) => {
     // same secret; it is an option of the engine (options/index.js), the environment winning.
     const bypassSecret = routeCacheBypassSecretFrom({ engineConfiguration: servableConfig?.configuration?.config?.engine })
     const urls = paths ? paths : (path ? [path] : (url ? [url] : []))
+
+    // A CONNECT route cannot be served (owner's Q1376 a, 2026-11-23): Node's HTTP server hands a CONNECT request to its
+    // own 'connect' event (and closes the socket when nothing listens), never to Express, and its target is a host and a
+    // port, not a path. It was registered as a HEAD route, which answered HEAD requests on that path in place of the GET
+    // route's own HEAD. It is now refused at define, logged, and never fails the boot.
+    if (isConnectMethod(method)) {
+      console.error(`[ENGINE] [routes] CONNECT ${urls.map((routePath) => (prefix ? `${prefix}/${routePath}` : routePath)).join(', ')} is not defined: Node's HTTP server never hands a CONNECT request to a route`)
+      return
+    }
 
     // The route's parameters, read as `schema.queryString` declares them (parameters/index.js), compiled once here.
     const {
@@ -86,27 +101,6 @@ export default ({ servableConfig }) => {
             })
         } break
         case 'head': {
-          let __url = prefix ? `${prefix}/${_path}` : _path
-          __url = `/${sanitizePath.default(__url)}`.toLowerCase()
-          Servable.AppNative.head(
-            __url,
-            _cache({ cache: options.cache, bypassSecret }),
-            _rateLimiter({
-              rateLimiting: options.rateLimiting,
-              routeKey: `${method.toLowerCase()}:${__url}`
-            }),
-            async (request, response, next) => {
-              await processHttp({
-                servableArguments,
-                options,
-                routeParametersReader,
-                request,
-                response,
-                next
-              })
-            })
-        } break
-        case 'connect': {
           let __url = prefix ? `${prefix}/${_path}` : _path
           __url = `/${sanitizePath.default(__url)}`.toLowerCase()
           Servable.AppNative.head(

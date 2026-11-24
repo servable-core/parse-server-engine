@@ -69,6 +69,11 @@ Design note: `docs/typed-route-parameters.md`. In short:
 - Options: `isQueryValueGuessingEnabled` (`SERVABLE_QUERY_VALUE_GUESSING`, on: undeclared values guessed as before, also what Express's `request.query` holds, `createapp/index.js`; off: text as sent), `areDeclaredRouteParametersTyped` (`SERVABLE_TYPED_ROUTE_PARAMETERS`, on; the kill switch), `areUndeclaredParameterRoutesRefused` (`SERVABLE_REFUSE_UNDECLARED_PARAMETER_ROUTES`, off; with guessing off, an undeclared route that seems to read its parameters throws at define).
 - Boot report: `parameters/bootReport.js`, one summary line once definitions pause; `Servable.App.Route.undeclaredParameterRoutes()`.
 - Tests: `tests/unit/routeParameters.test.js` (every type, defaults, refusals, the guess proven equal to the former parser by a property test); `tests/integration/typedRouteParameters.test.js` (the real Express app, `Route.define`, processHttp and the function verb over HTTP, guessing on and off, the refusal option; no other service).
+- Decided, not built (owner's Q1372 a, Q1373 a, 2026-11-23): bodies stay untyped (`schema.body` is not read); the text `undefined`/`null` sent for a declared boolean or number is a 400 like any unreadable value, pinned in `routeParameters.test.js`.
+
+## CONNECT routes are refused (2026-11-23, owner's Q1376 a)
+
+`src/register/route/index.js` no longer registers a `method: 'connect'` route as a HEAD route (which, defined before a GET route on the same path, answered that path's HEAD requests, a probe's included). It is refused at define with one `console.error` and never fails the boot: Node's HTTP server hands CONNECT to its own `'connect'` event, never to Express, so no CONNECT route can be served. No option: it was a bug, and no app defines one. Test: `tests/unit/routeMethods.test.js` (the real Express app on loopback, no other service).
 
 ## Error answers of routes (2026-11-24, owner's Q1470)
 

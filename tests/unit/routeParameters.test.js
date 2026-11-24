@@ -133,6 +133,25 @@ describe('declared numbers', () => {
   })
 })
 
+describe('the text undefined or null sent for a typed value (owner\'s Q1373 a, 2026-11-23)', () => {
+  const { read } = readerOf({ isDraft: 'boolean', page: 'integer', ratio: 'number', slug: 'string' })
+
+  test('is refused with a 400 for a boolean or a number: a client bug the guess used to hide, fixed in the client', () => {
+    for (const word of ['undefined', 'null', 'NaN']) {
+      for (const name of ['isDraft', 'page', 'ratio']) {
+        const refusal = refusalOf(() => read(`${name}=${word}`))
+        expect(refusal.code).toBe(400)
+        expect(refusal.message).toContain(`"${name}"`)
+      }
+    }
+  })
+
+  test('stays the text it was sent as for a string', () => {
+    expect(read('slug=undefined')).toEqual({ slug: 'undefined' })
+    expect(read('slug=null')).toEqual({ slug: 'null' })
+  })
+})
+
 describe('a declared string', () => {
   const { read } = readerOf({ slug: 'string', name: { type: 'string', maxLength: 5 }, sort: { type: 'string', enum: ['asc', 'desc'], default: 'desc' } })
 
