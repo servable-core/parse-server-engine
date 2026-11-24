@@ -1,4 +1,5 @@
-declare function _default({ rateLimiting }: {
+declare function _default({ rateLimiting, routeKey }: {
+    routeKey?: string;
     rateLimiting?: {
         type?: "fixedByIp";
         params?: {
