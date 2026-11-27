@@ -81,6 +81,14 @@ Design note: `docs/typed-route-parameters.md`. In short:
 
 `src/register/route/process/errorStatus.js`: a route that throws is answered with its code as the status only when that code is 200 to 599; a Parse code from 100 to 199 (an informational status: the client got no final answer and the connection closed), a negative one or one above 599 (Express threw, no answer at all) is answered with a 400, a code that is not an integer with a 500. The body is `{ error, code }` (the code was not sent before). Parse's codes in the 200s keep their status: web/main's client reads 209 as signed out. Used by `process/http.js` and `verbs/function/processFunction.js`. Test: `tests/unit/routeErrorStatus.test.js` (both route kinds over a real Express app on loopback).
 
+**A thrown refusal reaches the client** (2026-11-27, owner's Q440 a): `src/register/route/process/errorAnswer.js` builds the
+body of both route kinds. An error carrying `refusalCode` (a short name: a letter, then letters, digits, `_`, `-` or `.`,
+at most 64 characters) is answered `{ error, code, refusalCode }`, plus `refusalDetails` when the error carries a plain
+object under that name, kept only for its text (at most 1,000 characters), finite numbers, true/false, null and lists of
+at most 50 of those, at most 30 keys; details without a code are not sent. Nothing else of the error is ever sent (no
+stack, no other field). An error without a refusal code is answered exactly as before. The client reads it from the
+body (web/main's `@servable/nextjs` keeps the body as `error.details`). Test: `tests/unit/routeErrorRefusal.test.js`.
+
 ## The signed reader address (2026-11-27, owner's Q2309 a)
 
 Design: `.docs/technical/ssr-reader-address-design-2026-11-27.md` (workspace root). A server that renders pages for readers

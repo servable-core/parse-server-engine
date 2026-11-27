@@ -1,6 +1,7 @@
 import requestAdapter from '../../adapters/request.js'
 import { buildParamsWithTraceContext } from '../../lib/traceContext.js'
 import { httpStatusOfThrownErrorCode } from '../../process/errorStatus.js'
+import { errorAnswerBodyOf } from '../../process/errorAnswer.js'
 
 export default async ({
   servableArguments,
@@ -78,8 +79,9 @@ export default async ({
     }
     // next(a)
     // response.send(a)
-    // As process/http.js: a code that is no final HTTP status is answered with a 400, the code in the body.
-    response.status(httpStatusOfThrownErrorCode(a.code)).json({ error: a.message, code: a.code })
+    // As process/http.js: a code that is no final HTTP status is answered with a 400, the code in the body, and a thrown
+    // refusal (`refusalCode`, its plain `refusalDetails`) is sent with it (../../process/errorAnswer.js).
+    response.status(httpStatusOfThrownErrorCode(a.code)).json(errorAnswerBodyOf({ message: a.message, code: a.code, thrownError: e }))
     // response.status(code)
     // next(a)
   }

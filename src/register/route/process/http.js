@@ -2,6 +2,7 @@ import requestAdapter from '../adapters/request.js'
 import { buildParamsWithTraceContext } from '../lib/traceContext.js'
 import { markAnswerAsAnError } from '../cache/lib/cachedAnswer.js'
 import { httpStatusOfThrownErrorCode } from './errorStatus.js'
+import { errorAnswerBodyOf } from './errorAnswer.js'
 
 export default async ({
   servableArguments,
@@ -99,9 +100,10 @@ export default async ({
     // The status is the error's code, a Parse code as often as an HTTP one, and several Parse codes are in the 200s
     // (209 "invalid session token"): marked, so the route cache never keeps it as a success (cache/lib/cachedAnswer.js).
     // A code that is no final HTTP status (a Parse code from 100 to 199, a negative one, one above 599) is answered
-    // with a 400, the code kept in the body (./errorStatus.js).
+    // with a 400, the code kept in the body (./errorStatus.js). A refusal the route threw (`refusalCode`, and its plain
+    // `refusalDetails`) is sent with it, nothing else of the error (./errorAnswer.js, Q440 a).
     markAnswerAsAnError(response)
-    response.status(httpStatusOfThrownErrorCode(a.code)).json({ error: a.message, code: a.code })
+    response.status(httpStatusOfThrownErrorCode(a.code)).json(errorAnswerBodyOf({ message: a.message, code: a.code, thrownError: e }))
   }
 }
 
