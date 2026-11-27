@@ -3,7 +3,8 @@ import { applyTrustProxy } from "./trustProxy.js";
 import compression from 'compression';
 // import bodyParser from 'body-parser'
 import { createQueryParser } from '../register/route/parameters/queryString.js';
-import engineOptionsFrom from '../options/index.js';
+import engineOptionsFrom, { readerAddressSecretFrom } from '../options/index.js';
+import { readerAddressMiddlewareOf } from '../readerAddress/index.js';
 import cookieParser from "cookie-parser";
 import cors from 'cors';
 
@@ -57,6 +58,14 @@ export default async ({ servableConfig }) => {
   if (trustProxySetting !== undefined) {
     console.log("[ENGINE] trust proxy", trustProxySetting)
   }
+  // Right after trust proxy, before CORS, the rate limiters and every route (Parse's own included): the reader's address
+  // of each request, the one a server rendering for readers signed (`x-servable-reader-address`), else req.ip.
+  // See readerAddress/index.js.
+  const readerAddressSecret = readerAddressSecretFrom({ engineConfiguration: servableConfig.configuration?.config?.engine })
+  if (readerAddressSecret) {
+    console.log("[ENGINE] signed reader addresses believed")
+  }
+  app.use(readerAddressMiddlewareOf({ secret: readerAddressSecret }))
   app.use(compression())
 
   // app.use(express.json({

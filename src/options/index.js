@@ -99,3 +99,36 @@ export const routeCacheBypassSecretFrom = ({ engineConfiguration = {}, env = pro
 }
 
 export default engineOptionsFrom
+
+// The secret a server that calls this one for its readers (web/main's server render) signs the reader's address with
+// (readerAddress/index.js, `x-servable-reader-address`). Not a switch, so not in ENGINE_OPTIONS:
+//   readerAddressSecret             SERVABLE_READER_ADDRESS_SECRET     none  the environment wins over the app's value
+// None (the default) means no header is believed: every request is counted under its own address (`req.ip`), as before.
+// A value shorter than READER_ADDRESS_SECRET_MINIMUM_LENGTH is refused (logged once, treated as none): it is an HMAC key.
+export const READER_ADDRESS_SECRET_ENVIRONMENT_VARIABLE = 'SERVABLE_READER_ADDRESS_SECRET'
+export const READER_ADDRESS_SECRET_MINIMUM_LENGTH = 32
+
+let isShortReaderAddressSecretReported = false
+
+/**
+ * @param {object} [props]
+ * @param {Record<string, any>} [props.engineConfiguration] - `servableConfig.configuration.config.engine`.
+ * @param {Record<string, string | undefined>} [props.env]
+ * @returns {string | null}
+ */
+export const readerAddressSecretFrom = ({ engineConfiguration = {}, env = process.env } = {}) => {
+  const fromEnvironment = String(env?.[READER_ADDRESS_SECRET_ENVIRONMENT_VARIABLE] ?? '').trim()
+  const fromTheApp = typeof engineConfiguration?.readerAddressSecret === 'string' ? engineConfiguration.readerAddressSecret.trim() : ''
+  const secret = fromEnvironment || fromTheApp
+  if (!secret) {
+    return null
+  }
+  if (secret.length < READER_ADDRESS_SECRET_MINIMUM_LENGTH) {
+    if (!isShortReaderAddressSecretReported) {
+      isShortReaderAddressSecretReported = true
+      console.error('[ENGINE] [reader address] secret refused: shorter than', READER_ADDRESS_SECRET_MINIMUM_LENGTH, 'characters; no signed reader address is believed')
+    }
+    return null
+  }
+  return secret
+}

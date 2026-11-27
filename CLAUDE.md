@@ -80,3 +80,20 @@ Design note: `docs/typed-route-parameters.md`. In short:
 ## Error answers of routes (2026-11-24, owner's Q1470)
 
 `src/register/route/process/errorStatus.js`: a route that throws is answered with its code as the status only when that code is 200 to 599; a Parse code from 100 to 199 (an informational status: the client got no final answer and the connection closed), a negative one or one above 599 (Express threw, no answer at all) is answered with a 400, a code that is not an integer with a 500. The body is `{ error, code }` (the code was not sent before). Parse's codes in the 200s keep their status: web/main's client reads 209 as signed out. Used by `process/http.js` and `verbs/function/processFunction.js`. Test: `tests/unit/routeErrorStatus.test.js` (both route kinds over a real Express app on loopback).
+
+## The signed reader address (2026-11-27, owner's Q2309 a)
+
+Design: `.docs/technical/ssr-reader-address-design-2026-11-27.md` (workspace root). A server that renders pages for readers
+(web/main) calls this one for them, so `req.ip` is that server's for every reader. It sends
+`x-servable-reader-address: v1;<signed at, Unix seconds>;<address>;<base64url HMAC-SHA256(secret, "v1\n<signed at>\n<address>")>`.
+- `src/readerAddress/index.js`: the check (`checkedReaderAddressOf`: absent, no_secret, malformed, refused, expired,
+  verified; accepted 60 s after signing and 10 s before), the middleware `createapp/index.js` installs right after
+  `trust proxy` (before CORS, the limiters and every route), `readerAddressOfRequest` (the verified address, else
+  `req.ip`). Never a refusal, never a log line per request; `servable_reader_address_checks_total{outcome}` counts every
+  request that carried the header.
+- The secret: engine option `readerAddressSecret`, environment `SERVABLE_READER_ADDRESS_SECRET` winning, at least 32
+  characters (`options/index.js` `readerAddressSecretFrom`). None: no header is believed, everything as before.
+- The `fixedByIp` limiter keys on `ipKeyGenerator(readerAddressOfRequest(request))` (an IPv6 address by its /56, the
+  library's own default); a handler reads `request.readerAddress` (`adapters/request.js`).
+- The format is pinned by a shared test vector, asserted here and in web/main's signer
+  (`web/main/@servable/nextjs/routes/lib/readerAddress.test.js`). Tests: `tests/unit/readerAddress.test.js`.

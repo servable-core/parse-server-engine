@@ -1,4 +1,5 @@
-import rateLimit from 'express-rate-limit'
+import rateLimit, { ipKeyGenerator } from 'express-rate-limit'
+import { readerAddressOfRequest } from '../../../readerAddress/index.js'
 import empty from "../empty.js"
 import RedisRateLimitStore from './redisStore.js'
 import { getRedisClient } from '../cache/redis/index.js'
@@ -38,11 +39,14 @@ export default ({ rateLimiting = {}, routeKey = null }) => {
         message,
         standardHeaders, // Return rate limit info in the `RateLimit-*` headers
         legacyHeaders, // Disable the `X-RateLimit-*` headers,
-        // Keyed on req.ip (the library's default). Behind a proxy that is only the visitor when the app
-        // sets "trust proxy" (SERVABLE_ENGINE_TRUST_PROXY, createapp/trustProxy.js); without it every visitor
-        // shares the proxy's bucket. The library's own checks stay on, so that mistake is logged
+        // Keyed on the reader's address (readerAddress/index.js): the one a server rendering for readers signed in
+        // `x-servable-reader-address`, else req.ip. req.ip is the visitor behind a proxy only when the app sets
+        // "trust proxy" (SERVABLE_ENGINE_TRUST_PROXY, createapp/trustProxy.js); without it every visitor shares the
+        // proxy's bucket. The library's own checks stay on, so that mistake is logged
         // (ERR_ERL_UNEXPECTED_X_FORWARDED_FOR) instead of silently passing:
         // https://express-rate-limit.mintlify.app/reference/error-codes
+        // ipKeyGenerator is the library's own grouping of req.ip, kept: an IPv6 address counted by its /56.
+        keyGenerator: (request) => ipKeyGenerator(readerAddressOfRequest(request)),
       })
     }
     default: {

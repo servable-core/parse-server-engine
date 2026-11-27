@@ -1,5 +1,8 @@
+import { readerAddressOfRequest } from '../../../readerAddress/index.js'
+
 /**
- * The request a route's handler gets.
+ * The request a route's handler gets. `readerAddress` is the address the reader is counted under
+ * (readerAddress/index.js): the one a server rendering for readers signed, else the request's own.
  * @param {object} props
  * @param {any} props.request - Express's request.
  * @param {Record<string, any>} [props.query] - the query as the route reads it (parameters/index.js); Express's own
@@ -24,6 +27,7 @@ export default ({ request, query, body }) => {
     files: request.files,
     file: request.file,
     body: body === undefined ? request.body : body,
+    readerAddress: readerAddressOfRequest(request),
     native: request
   }
 }

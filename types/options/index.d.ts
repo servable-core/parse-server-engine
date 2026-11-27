@@ -74,3 +74,9 @@ export function routeCacheBypassSecretFrom({ engineConfiguration, env }?: {
     env?: Record<string, string | undefined>;
 }): string | null;
 export default engineOptionsFrom;
+export const READER_ADDRESS_SECRET_ENVIRONMENT_VARIABLE: "SERVABLE_READER_ADDRESS_SECRET";
+export const READER_ADDRESS_SECRET_MINIMUM_LENGTH: 32;
+export function readerAddressSecretFrom({ engineConfiguration, env }?: {
+    engineConfiguration?: Record<string, any>;
+    env?: Record<string, string | undefined>;
+}): string | null;
